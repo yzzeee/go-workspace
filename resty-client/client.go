@@ -5,17 +5,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-resty/resty/v2"
-	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"go-practice/resty-client/prometheus"
 	"net/url"
 )
 
 type prometheusResponse struct {
-	Status    string          `json:"status"`
-	Data      json.RawMessage `json:"data"`
-	ErrorType v1.ErrorType    `json:"errorType,omitempty"`
-	Error     string          `json:"error,omitempty"`
-	Warnings  []string        `json:"warnings,omitempty"`
+	Status   string          `json:"status"`
+	Data     json.RawMessage `json:"data"`
+	Error    string          `json:"error,omitempty"`
+	Warnings []string        `json:"warnings,omitempty"`
 }
 
 type prometheusResponses []prometheusResponse
@@ -23,7 +21,7 @@ type prometheusResponses []prometheusResponse
 // https://pkg.go.dev/github.com/go-resty/resty#section-readme
 func main() {
 	queryParams := url.Values{}
-	queryParams.Add("nodes", "aaa|bbb")
+	queryParams.Add("nodes", "node1(fqdn)|node2(fqdn)")
 
 	// 클라이언트에서 요청한 key 에 따른 쿼리 생성
 	metricDefinition, isMetric := prometheus.MetricDefinition["cpu_usage_node"]

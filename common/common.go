@@ -2,6 +2,7 @@ package common
 
 import (
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -70,4 +71,19 @@ func Get(args ...interface{}) interface{} {
 		return fallback
 	}
 	return data
+}
+
+func Exists(s []string, target string) bool {
+	i := sort.SearchStrings(s, target)
+	return i < len(s) && s[i] == target
+}
+
+func MergeJSONMaps(maps ...map[string]interface{}) (result map[string]interface{}) {
+	result = make(map[string]interface{})
+	for _, m := range maps {
+		for k, v := range m {
+			result[k] = v
+		}
+	}
+	return result
 }
