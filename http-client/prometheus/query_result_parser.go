@@ -26,7 +26,10 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 		NodeCpu, NodeMemory, NodeFileSystem,
 		NodeNetworkIn, NodeNetworkOut, NodePodCount,
 		QuotaCpuRequest, QuotaCpuLimit, QuotaMemoryRequest,
-		QuotaMemoryLimit:
+		QuotaMemoryLimit, QuotaObjectCountConfigmaps, QuotaObjectCountPods,
+		QuotaObjectCountSecrets, QuotaObjectCountReplicationControllers, QuotaObjectCountServices,
+		QuotaObjectCountServicesLoadBalancers, QuotaObjectCountServicesNodePorts, QuotaObjectCountResourceQuotas,
+		QuotaObjectCountPersistentVolumeClaims:
 		response = make(map[string]interface{})
 		_ = json.Unmarshal(responseBytes, &response)
 		for _, ele := range response["data"].(map[string]interface{})["result"].([]interface{}) {

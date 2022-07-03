@@ -552,6 +552,123 @@ var (
 			},
 			PrimaryUnit: "B",
 		},
+		QuotaObjectCountConfigmaps: {
+			Label: "OBJECT COUNT CONFIGMAPS",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{resource=\"count/configmaps\",namespace=~\"%s\",type=\"hard\"}) by (namespace)",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaObjectCountPods: {
+			Label: "OBJECT COUNT PODS",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{resource=\"count/pods\",namespace=~\"%s\",type=\"hard\"}) by (namespace)",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaObjectCountSecrets: {
+			Label: "OBJECT COUNT SECRETS",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{resource=\"count/secrets\",namespace=~\"%s\",type=\"hard\"}) by (namespace)",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaObjectCountReplicationControllers: {
+			Label: "OBJECT COUNT REPLICATION CONTROLLERS",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{resource=\"count/replicationcontrollers\",namespace=~\"%s\",type=\"hard\"}) by (namespace)",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaObjectCountServices: {
+			Label: "OBJECT COUNT SERVICES",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{resource=\"count/services\",namespace=~\"%s\",type=\"hard\"}) by (namespace)",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaObjectCountServicesLoadBalancers: {
+			Label: "OBJECT COUNT SERVICES LOAD BALANCERS",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{resource=\"count/services.loadbalancers\",namespace=~\"%s\",type=\"hard\"}) by (namespace)",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaObjectCountServicesNodePorts: {
+			Label: "OBJECT COUNT SERVICES NODE PORTS",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{resource=\"count/services.nodeports\",namespace=~\"%s\",type=\"hard\"}) by (namespace)",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaObjectCountResourceQuotas: {
+			Label: "OBJECT COUNT RESOURCE QUOTAS",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{resource=\"count/resourcequotas\",namespace=~\"%s\",type=\"hard\"}) by (namespace)",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaObjectCountPersistentVolumeClaims: {
+			Label: "OBJECT COUNT PERSISTENT VOLUME CLAIMS",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{resource=\"count/persistentvolumeclaims\",namespace=~\"%s\",type=\"hard\"}) by (namespace)",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
 		RangeNodeCpuUsage: {
 			Label: "CPU USAGE",
 			SubLabels: []string{

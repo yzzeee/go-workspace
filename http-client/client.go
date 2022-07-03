@@ -50,7 +50,7 @@ func main() {
 	// -- single 모니터링 하려는 메트릭 키의 목록
 	//var metricKeys = []string{"quota"}
 	//var metricKeys = []string{"container_cpu"}
-	var metricKeys = []string{"container_memory"}
+	//var metricKeys = []string{"container_memory"}
 	//var metricKeys = []string{"container_file_system"}
 	//var metricKeys = []string{"container_network_in"}
 	//var metricKeys = []string{"container_network_out"}
@@ -82,6 +82,15 @@ func main() {
 	//var metricKeys = []string{"quota_cpu_limit"}
 	//var metricKeys = []string{"quota_memory_request"}
 	//var metricKeys = []string{"quota_memory_limit"}
+	//var metricKeys = []string{"quota_object_count_configmaps"}
+	//var metricKeys = []string{"quota_object_count_pods"}
+	//var metricKeys = []string{"quota_object_count_secrets"}
+	//var metricKeys = []string{"quota_object_count_replication_controllers"}
+	//var metricKeys = []string{"quota_object_count_services"}
+	//var metricKeys = []string{"quota_object_count_services_load_balancers"}
+	//var metricKeys = []string{"quota_object_count_services_node_ports"}
+	//var metricKeys = []string{"quota_object_count_resource_quotas"}
+	var metricKeys = []string{"quota_object_count_persistent_volume_claims"}
 	//var metricKeys = []string{"range_node_cpu_usage"}
 	//var metricKeys = []string{"range_container_cpu_usage"}
 	//var metricKeys = []string{"range_cpu_load_average"}

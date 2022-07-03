@@ -138,6 +138,20 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, 
 				Values: values,
 			}
 		}
+	case // (6)
+		QuotaObjectCountConfigmaps, QuotaObjectCountPods, QuotaObjectCountSecrets,
+		QuotaObjectCountReplicationControllers, QuotaObjectCountServices, QuotaObjectCountServicesLoadBalancers,
+		QuotaObjectCountServicesNodePorts, QuotaObjectCountResourceQuotas, QuotaObjectCountPersistentVolumeClaims:
+		fmt.Println(resultSets)
+		var resultSet0, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[0]), 64)
+
+		if unitTypeKeys != nil && unitTypeKeys[0] != "" {
+			resultSet0 = common.Humanize(resultSet0, unitTypeKeys[0], &common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
+		}
+		return MetricResponse{
+			Values: fmt.Sprintf("%v", resultSet0),
+		}
 	}
+
 	return MetricResponse{}
 }
