@@ -30,6 +30,73 @@ func main() {
 
 	bodyParams := map[string]interface{}{
 		"metricKeys": []string{"container_cpu"},
+		//"metricKeys": []string{"container_cpu"},
+		//"metricKeys": []string{"container_disk_io_reads"},
+		//"metricKeys": []string{"container_disk_io_writes"},
+		//"metricKeys": []string{"container_file_system"},
+		//"metricKeys": []string{"container_memory"},
+		//"metricKeys": []string{"container_network_in"},
+		//"metricKeys": []string{"container_network_io"},
+		//"metricKeys": []string{"container_network_out"},
+		//"metricKeys": []string{"container_network_packet"},
+		//"metricKeys": []string{"container_network_packet_drop"},
+		//"metricKeys": []string{"custom_node_cpu"},
+		//"metricKeys": []string{"custom_node_file_system"},
+		//"metricKeys": []string{"custom_node_memory"},
+		//"metricKeys": []string{"custom_quota_cpu_limit"},
+		//"metricKeys": []string{"custom_quota_cpu_request"},
+		//"metricKeys": []string{"custom_quota_memory_limit"},
+		//"metricKeys": []string{"custom_quota_memory_request"},
+		//"metricKeys": []string{"node_cpu"},
+		//"metricKeys": []string{"node_cpu_load_average"},
+		//"metricKeys": []string{"node_disk_io"},
+		//"metricKeys": []string{"node_file_system"},
+		//"metricKeys": []string{"node_memory"},
+		//"metricKeys": []string{"node_network_in"},
+		//"metricKeys": []string{"node_network_io"},
+		//"metricKeys": []string{"node_network_out"},
+		//"metricKeys": []string{"node_network_packet"},
+		//"metricKeys": []string{"node_network_packet_drop"},
+		//"metricKeys": []string{"number_of_container"},
+		//"metricKeys": []string{"number_of_deployment"},
+		//"metricKeys": []string{"number_of_ingress"},
+		//"metricKeys": []string{"number_of_pipeline"},
+		//"metricKeys": []string{"number_of_pod"},
+		//"metricKeys": []string{"number_of_namespace"},
+		//"metricKeys": []string{"number_of_service"},
+		//"metricKeys": []string{"number_of_stateful_set"},
+		//"metricKeys": []string{"number_of_volume"},
+		//"metricKeys": []string{"top_node_cpu_by_instance"},
+		//"metricKeys": []string{"top_node_file_system_by_instance"},
+		//"metricKeys": []string{"top_node_memory_by_instance"},
+		//"metricKeys": []string{"top_node_network_in_by_instance"},
+		//"metricKeys": []string{"top_node_network_out_by_instance"},
+		//"metricKeys": []string{"top_count_pod_by_node"},
+		//"metricKeys": []string{"top5_container_cpu_by_namespace"},
+		//"metricKeys": []string{"top5_container_cpu_by_pod"},
+		//"metricKeys": []string{"top5_container_file_system_by_namespace},
+		//"metricKeys": []string{"top5_container_file_system_by_pod"},
+		//"metricKeys": []string{"top5_container_memory_by_namespace"},
+		//"metricKeys": []string{"top5_container_memory_by_pod"},
+		//"metricKeys": []string{"top5_container_network_in_by_namespace},
+		//"metricKeys": []string{"top5_container_network_in_by_pod"},
+		//"metricKeys": []string{"top5_container_network_out_by_namespace},
+		//"metricKeys": []string{"top5_container_network_out_by_pod"},
+		//"metricKeys": []string{"top5_count_pod_by_namespace"},
+		//"metricKeys": []string{"quota_cpu_limit"},
+		//"metricKeys": []string{"quota_cpu_request"},
+		//"metricKeys": []string{"quota_memory_limit"},
+		//"metricKeys": []string{"quota_memory_request"},
+		//"metricKeys": []string{"quota_object_count_configmaps"},
+		//"metricKeys": []string{"quota_object_count_pods"},
+		//"metricKeys": []string{"quota_object_count_secrets"},
+		//"metricKeys": []string{"quota_object_count_replication_controllers"},
+		//"metricKeys": []string{"quota_object_count_services"},
+		//"metricKeys": []string{"quota_object_count_services_load_balancers"},
+		//"metricKeys": []string{"quota_object_count_services_node_ports"},
+		//"metricKeys": []string{"quota_object_count_resource_quotas"},
+		//"metricKeys": []string{"quota_object_count_persistent_volume_claims"},
+		//"metricKeys": []string{"summary_node_info"},
 		//"start": strconv.Itoa(int(now.Add(-time.Minute*5).Unix())),
 		//"end": strconv.Itoa(int(now.Unix())),
 		//"step": "120",
@@ -37,75 +104,6 @@ func main() {
 		//"instance": "master3.ocp4.inno.com|worker2.ocp4.inno.com",
 		//"namespace": "admin-workspace",
 	}
-
-	// -- single 모니터링 하려는 메트릭 키의 목록
-	//var metricKeys = []string{"quota"}
-	//var metricKeys = []string{"container_info"}
-	//var metricKeys = []string{"container_cpu"}
-	//var metricKeys = []string{"container_memory"}
-	//var metricKeys = []string{"container_disk_io_reads"}
-	//var metricKeys = []string{"container_disk_io_writes"}
-	//var metricKeys = []string{"container_file_system"}
-	//var metricKeys = []string{"container_network_in"}
-	//var metricKeys = []string{"container_network_out"}
-	//var metricKeys = []string{"container_network_packets_receive"}
-	//var metricKeys = []string{"container_network_packets_transmit"}
-	//var metricKeys = []string{"container_network_packets_receive_drop"}
-	//var metricKeys = []string{"container_network_packets_transmit_drop"}
-	//var metricKeys = []string{"container_pod_count"}
-	//var metricKeys = []string{"number_of_container"}
-	//var metricKeys = []string{"node_info"}
-	//var metricKeys = []string{"node_cpu"}
-	//var metricKeys = []string{"node_cpu_top"}
-	//var metricKeys = []string{"node_cpu_top5_projects"}
-	//var metricKeys = []string{"node_cpu_top5_pods"}
-	//var metricKeys = []string{"node_memory"}
-	//var metricKeys = []string{"node_memory_top"}
-	//var metricKeys = []string{"node_memory_top5_projects"}
-	//var metricKeys = []string{"node_memory_top5_pods"}
-	//var metricKeys = []string{"node_file_system"}
-	//var metricKeys = []string{"node_file_system_top"}
-	//var metricKeys = []string{"node_file_system_top5_projects"}
-	//var metricKeys = []string{"node_file_system_top5_pods"}
-	//var metricKeys = []string{"node_network_in"}
-	//var metricKeys = []string{"node_network_in_top"}
-	//var metricKeys = []string{"node_network_in_top5_projects"}
-	//var metricKeys = []string{"node_network_in_top5_pods"}
-	//var metricKeys = []string{"node_network_out"}
-	//var metricKeys = []string{"node_network_out_top"}
-	//var metricKeys = []string{"node_network_out_top5_projects"}
-	//var metricKeys = []string{"node_network_out_top5_pods"}
-	//var metricKeys = []string{"node_pod_count"}
-	//var metricKeys = []string{"node_pod_count_top"}
-	//var metricKeys = []string{"node_pod_count_top5_projects"}
-	//var metricKeys = []string{"quota_cpu_request"}
-	//var metricKeys = []string{"quota_cpu_limit"}
-	//var metricKeys = []string{"quota_memory_request"}
-	//var metricKeys = []string{"quota_memory_limit"}
-	//var metricKeys = []string{"quota_object_count_configmaps"}
-	//var metricKeys = []string{"quota_object_count_pods"}
-	//var metricKeys = []string{"quota_object_count_secrets"}
-	//var metricKeys = []string{"quota_object_count_replication_controllers"}
-	//var metricKeys = []string{"quota_object_count_services"}
-	//var metricKeys = []string{"quota_object_count_services_load_balancers"}
-	//var metricKeys = []string{"quota_object_count_services_node_ports"}
-	//var metricKeys = []string{"quota_object_count_resource_quotas"}
-	//var metricKeys = []string{"quota_object_count_persistent_volume_claims"}
-	//var metricKeys = []string{"quota_limit_range"}
-	//var metricKeys = []string{"range_node_cpu_usage"}
-	//var metricKeys = []string{"range_container_cpu_usage"}
-	//var metricKeys = []string{"range_cpu_load_average"}
-	//var metricKeys = []string{"range_memory_usage"}
-	//var metricKeys = []string{"range_memory_swap"}
-	//var metricKeys = []string{"range_network_io"}
-	//var metricKeys = []string{"range_network_packet"}
-	//var metricKeys = []string{"range_network_bandwidth"}
-	//var metricKeys = []string{"range_network_packet_receive_transmit"}
-	//var metricKeys = []string{"range_network_packet_receive_transmit_drop"}
-	//var metricKeys = []string{"range_file_system"}
-	//var metricKeys = []string{"range_disk_io"}
-	//var metricKeys = []string{"number_of_pipeline"}
-	//var metricKeys = []string{"node_info"}
 
 	var result = make(map[string]interface{})
 
@@ -140,7 +138,7 @@ func main() {
 				fmt.Printf("failed to get limit range by Kubernetes API, err=%s\n", err)
 			}
 		} else if metricKey == "number_of_pipeline" {
-			final, err = kubernetes.GetPipelines()
+			//final, err = kubernetes.GetPipelines()
 			if err != nil {
 				fmt.Printf("failed to get pipeline by Kubernetes API, err=%s\n", err)
 			}
