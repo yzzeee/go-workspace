@@ -155,10 +155,12 @@ func Humanize(value float64, key UnitTypeKey, options *HumanizeOptions) *Humaniz
 
 	if result == 0 {
 		var offset int
-		for i, v := range strings.Split(strconv.FormatFloat(value, 'f', -1, 64), ".")[1] {
-			if string(v) != "0" {
-				offset = i + 2
-				break
+		if value != 0 {
+			for i, v := range strings.Split(strconv.FormatFloat(value, 'f', -1, 64), ".")[1] {
+				if string(v) != "0" {
+					offset = i + 2
+					break
+				}
 			}
 		}
 

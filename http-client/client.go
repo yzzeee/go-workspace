@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
+	"time"
 )
 
 const (
@@ -24,80 +26,75 @@ func init() {
 func main() {
 	queryParams := url.Values{}
 
-	//now := time.Now()
+	now := time.Now()
 	//now := time.Date(2022, 6, 27, 10, 15, 30, 0, time.Local)
-	//queryParams.Add("start", strconv.Itoa(int(now.Add(-time.Minute*5).Unix())))
-	//queryParams.Add("end", strconv.Itoa(int(now.Unix())))
-	//queryParams.Add("step", "20") // 초 단위 간격
+
+	queryParams.Add("start", strconv.Itoa(int(now.Add(-time.Minute*5).Unix())))
+	queryParams.Add("end", strconv.Itoa(int(now.Unix())))
+	queryParams.Add("step", "20") // 초 단위 간격
+
 	//queryParams.Add("node", "master3.ocp4.inno.com|worker2.ocp4.inno.com")
 	//queryParams.Add("instance", "master3.ocp4.inno.com|worker2.ocp4.inno.com")
-	//queryParams.Add("namespace", "admin-workspace")
+	queryParams.Add("namespace", "admin-workspace")
 
-	//queryParams.Add("start", "1440398866.521")
-	//queryParams.Add("end", "1656398866.521")
-	//queryParams.Add("step", "120") // 초 단위 간격
-	// 타임 스탬프에 대한 값이 조회되지 않는 매트릭 구간도 있어서 항상 개수가 동일하지 않다.
-	//queryParams.Add("start", "1656324056.684")
-	//queryParams.Add("end", "1656324056.684")
-	//queryParams.Add("step", "120") // 초 단위 간격
-
-	//queryParams.Add("start", "1656298468.184")
-	//queryParams.Add("end", "1656309268.184")
-	//queryParams.Add("step", "600") // 초 단위 간격
-
-	//start=1655801906.107&end=1655802206.107&step=10
-
-	// -- single 모니터링 하려는 메트릭 키의 목록
-	//var metricKeys = []string{"quota"}
 	//var metricKeys = []string{"container_cpu"}
-	var metricKeys = []string{"container_memory"}
 	//var metricKeys = []string{"container_file_system"}
+	//var metricKeys = []string{"container_memory"}
 	//var metricKeys = []string{"container_network_in"}
 	//var metricKeys = []string{"container_network_out"}
-	//var metricKeys = []string{"node_info"}
+
 	//var metricKeys = []string{"node_cpu"}
-	//var metricKeys = []string{"node_cpu_top"}
-	//var metricKeys = []string{"node_cpu_top5_projects"}
-	//var metricKeys = []string{"node_cpu_top5_pods"}
-	//var metricKeys = []string{"node_memory"}
-	//var metricKeys = []string{"node_memory_top"}
-	//var metricKeys = []string{"node_memory_top5_projects"}
-	//var metricKeys = []string{"node_memory_top5_pods"}
 	//var metricKeys = []string{"node_file_system"}
-	//var metricKeys = []string{"node_file_system_top"}
-	//var metricKeys = []string{"node_file_system_top5_projects"}
-	//var metricKeys = []string{"node_file_system_top5_pods"}
+	//var metricKeys = []string{"node_memory"}
 	//var metricKeys = []string{"node_network_in"}
-	//var metricKeys = []string{"node_network_in_top"}
-	//var metricKeys = []string{"node_network_in_top5_projects"}
-	//var metricKeys = []string{"node_network_in_top5_pods"}
 	//var metricKeys = []string{"node_network_out"}
-	//var metricKeys = []string{"node_network_out_top"}
-	//var metricKeys = []string{"node_network_out_top5_projects"}
-	//var metricKeys = []string{"node_network_out_top5_pods"}
-	//var metricKeys = []string{"node_pod_count"}
-	//var metricKeys = []string{"node_pod_count_top"}
-	//var metricKeys = []string{"node_pod_count_top5_projects"}
-	//var metricKeys = []string{"quota_cpu_request"}
+
+	//var metricKeys = []string{"number_of_deployment"}
+	//var metricKeys = []string{"number_of_ingress"}
+	//var metricKeys = []string{"number_of_pod"}
+	//var metricKeys = []string{"number_of_namespace"}
+	//var metricKeys = []string{"number_of_service"}
+	//var metricKeys = []string{"number_of_statefulset"}
+	var metricKeys = []string{"number_of_volume"}
+
+	//var metricKeys = []string{"top_node_cpu_by_instance"}
+	//var metricKeys = []string{"top_node_file_system_by_instance"}
+	//var metricKeys = []string{"top_node_memory_by_instance"}
+	//var metricKeys = []string{"top_node_network_in_by_instance"}
+	//var metricKeys = []string{"top_node_network_out_by_instance"}
+	//var metricKeys = []string{"top_pod_count_by_node"}
+	//var metricKeys = []string{"top5_container_cpu_by_namespace"}
+	//var metricKeys = []string{"top5_container_cpu_by_pod"}
+	//var metricKeys = []string{"top5_container_file_system_by_namespace"}
+	//var metricKeys = []string{"top5_container_file_system_by_pod"}
+	//var metricKeys = []string{"top5_container_memory_by_namespace"}
+	//var metricKeys = []string{"top5_container_memory_by_pod"}
+	//var metricKeys = []string{"top5_container_network_in_namespace"}
+	//var metricKeys = []string{"top5_container_network_in_by_pod"}
+	//var metricKeys = []string{"top5_container_network_out_by_namespace"}
+	//var metricKeys = []string{"top5_container_network_out_by_pod"}
+	//var metricKeys = []string{"top5_count_pod_by_namespace"}
+
 	//var metricKeys = []string{"quota_cpu_limit"}
-	//var metricKeys = []string{"quota_memory_request"}
+	//var metricKeys = []string{"quota_cpu_request"}
 	//var metricKeys = []string{"quota_memory_limit"}
-	//var metricKeys = []string{"range_node_cpu_usage"}
-	//var metricKeys = []string{"range_container_cpu_usage"}
-	//var metricKeys = []string{"range_cpu_load_average"}
-	//var metricKeys = []string{"range_memory_usage"}
-	//var metricKeys = []string{"range_memory_swap"}
-	//var metricKeys = []string{"range_network_io"}
-	//var metricKeys = []string{"range_network_packet"}
+	//var metricKeys = []string{"quota_memory_request"}
+
+	//var metricKeys = []string{"range_container_cpu"}
+	//var metricKeys = []string{"range_container_memory"}
+	//var metricKeys = []string{"range_container_network_io"}
+	//var metricKeys = []string{"range_container_network_packet"}
+	//var metricKeys = []string{"range_disk_io"}
+	//var metricKeys = []string{"range_file_system"}
 	//var metricKeys = []string{"range_network_bandwidth"}
 	//var metricKeys = []string{"range_network_packet_receive_transmit"}
 	//var metricKeys = []string{"range_network_packet_receive_transmit_drop"}
-	//var metricKeys = []string{"range_file_system"}
-	//var metricKeys = []string{"range_disk_io"}
-	//var metricKeys = []string{"node_info"}
-
-	// --- mixed
-	//var metricKeys = []string{"node_cpu_top", "node_info"}
+	//var metricKeys = []string{"range_node_cpu"}
+	//var metricKeys = []string{"range_node_cpu_load_average"}
+	//var metricKeys = []string{"range_node_memory"}
+	//var metricKeys = []string{"range_node_network_io"}
+	//var metricKeys = []string{"range_node_network_packet"}
+	//var metricKeys = []string{"summary_node_info"}
 
 	var result = make(map[string]interface{})
 

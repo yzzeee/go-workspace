@@ -14,7 +14,7 @@ type MetricDefinition struct {
 	SubLabels       []string             // 쿼리 템플릿의 라벨(미필수)
 	QueryTemplates  []string             // 쿼리 템플릿
 	QueryGenerators QueryGenerators      // 쿼리 템플릿에 조건절 추가하여 쿼리를 반환하는 함수 목록(쿼리 템플릿과 맵핑)
-	UnitTypeKeys    []common.UnitTypeKey // 쿼리 결과값의 단위 티입의 키 목록(쿼리 템플릿과 맵핑)
+	UnitTypeKeys    []common.UnitTypeKey // 쿼리 결과값의 단위 타입의 키 목록(쿼리 템플릿과 맵핑)
 	PrimaryUnit     string               // 쿼리 결과값의 단위 중 주단위
 
 	MetricKeys []MetricKey // 다른 메트릭 정의를 활용하는 메트릭(다른 메트릭 활용 시 해당 값만 작성)
@@ -23,28 +23,8 @@ type MetricDefinition struct {
 // MetricDefinitions 메트릭 키에 따른 메트릭 정의 상수
 var (
 	MetricDefinitions = map[MetricKey]MetricDefinition{
-		Quota: {
-			Label: "CPU",
-			QueryTemplates: []string{
-				// 노드의 CPU Core 사용량(Core)
-				"sum(rate(node_cpu_seconds_total{mode!=\"idle\",mode!=\"iowait\",instance=~\"%s\"}[3m]))",
-				// 노드의 CPU Core 수
-				"sum(kube_node_status_capacity{resource=\"cpu\",unit=\"core\",node=~\"%s\"})",
-				// 총 CPU Core 사용량(%)
-				"sum(rate(node_cpu_seconds_total{mode!=\"idle\",mode!=\"iowait\",instance=~\"%s\"}[3m]))/sum(kube_node_status_capacity{resource=\"cpu\",unit=\"core\",node=~\"%s\"})*100",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance"}, false),
-				queryGenerator([]interface{}{"node"}, false),
-				queryGenerator([]interface{}{"instance", "node"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.Core,
-				"",
-				common.Percentage,
-			},
-			PrimaryUnit: "Core",
-		},
+
+		// cAdvisor 쿼리 메트릭
 		ContainerCpu: {
 			Label: "CPU",
 			QueryTemplates: []string{
@@ -58,6 +38,20 @@ var (
 				common.Core,
 			},
 			PrimaryUnit: "Core",
+		},
+		ContainerFileSystem: {
+			Label: "FILE SYSTEM",
+			QueryTemplates: []string{
+				// 컨테이너의 파일 시스템 사용량(byte)
+				"sum(container_fs_usage_bytes{namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+			},
+			PrimaryUnit: "B",
 		},
 		ContainerMemory: {
 			Label: "MEMORY",
@@ -73,51 +67,128 @@ var (
 			},
 			PrimaryUnit: "B",
 		},
-		ContainerFileSystem: { // TODO
-			Label: "FILE SYSTEM",
-			QueryTemplates: []string{
-				// 노드의 파일 시스템 사용량(byte)
-				"sum(node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"rootfs\",instance=~\"%s\"}-node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"rootfs\",instance=~\"%s\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance", "instance"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.BinaryBytes,
-			},
-			PrimaryUnit: "B",
-		},
-		ContainerNetworkIn: { // TODO
+		ContainerNetworkIn: {
 			Label: "NETWORK IN",
 			QueryTemplates: []string{
-				// 노드의 NETWORK IN(bps)
-				"sum(rate(node_network_receive_bytes_total{instance=~\"%s\"}[3m]))",
+				// 컨테이너의 NETWORK IN(bps)
+				"sum(rate(container_network_receive_bytes_total{container=\"POD\",pod!=\"\",namespace=~\"%s\"}[3m]))",
 			},
 			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance"}, false),
+				queryGenerator([]interface{}{"namespace"}, false),
 			},
 			UnitTypeKeys: []common.UnitTypeKey{
 				common.DecimalBytesPerSec,
 			},
 			PrimaryUnit: "Bps",
 		},
-		ContainerNetworkOut: { // TODO
+		ContainerNetworkOut: {
 			Label: "NETWORK OUT",
 			QueryTemplates: []string{
-				// 노드의 NETWORK OUT(bps)
-				"sum(rate(node_network_receive_bytes_total{instance=~\"%s\"}[3m]))",
+				// 컨테이너의 NETWORK OUT(bps)
+				"sum(rate(container_network_transmit_bytes_total{container=\"POD\",pod!=\"\",namespace=~\"%s\"}[3m]))",
 			},
 			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance"}, false),
+				queryGenerator([]interface{}{"namespace"}, false),
 			},
 			UnitTypeKeys: []common.UnitTypeKey{
 				common.DecimalBytesPerSec,
 			},
 			PrimaryUnit: "Bps",
 		},
-		NodeInfo: {
-			MetricKeys: []MetricKey{NodeCpu, NodeMemory, NodeFileSystem, NodeNetworkIn, NodeNetworkOut, NodePodCount},
+
+		NumberOfDeployment: {
+			Label: "DEPLOYMENT",
+			QueryTemplates: []string{
+				"count(kube_deployment_labels{namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Count,
+			},
+			PrimaryUnit: "",
 		},
+		NumberOfIngress: {
+			Label: "INGRESS",
+			QueryTemplates: []string{
+				"count(kube_ingress_labels{namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Count,
+			},
+			PrimaryUnit: "",
+		},
+		NumberOfPod: {
+			Label: "POD",
+			QueryTemplates: []string{
+				// 노드, 네임스페이스 파드 수
+				"count(kube_pod_info{node=~\"%s\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"node", "namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Count,
+			},
+			PrimaryUnit: "",
+		},
+		NumberOfNamespace: {
+			Label: "PROJECT",
+			QueryTemplates: []string{
+				"count(kube_namespace_status_phase{phase=\"Active\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Count,
+			},
+			PrimaryUnit: "",
+		},
+		NumberOfService: {
+			Label: "SERVICE",
+			QueryTemplates: []string{
+				"count(kube_service_labels{namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Count,
+			},
+			PrimaryUnit: "",
+		},
+		NumberOfStatefulSet: {
+			Label: "STATEFULSET",
+			QueryTemplates: []string{
+				"count(kube_statefulset_labels{namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Count,
+			},
+			PrimaryUnit: "",
+		},
+		NumberOfVolume: {
+			Label: "VOLUME",
+			QueryTemplates: []string{
+				"count(kube_persistentvolume_labels{namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Count,
+			},
+			PrimaryUnit: "",
+		},
+		// Node Exporter 쿼리 메트릭
 		NodeCpu: {
 			Label: "CPU",
 			QueryTemplates: []string{
@@ -139,112 +210,6 @@ var (
 				common.Percentage,
 			},
 			PrimaryUnit: "Core",
-		},
-		NodeCpuTop: {
-			Label: "CPU",
-			QueryTemplates: []string{
-				// 노드의 CPU 사용량에 따른 노드 내림차순 목록
-				"sort_desc(sum(rate(node_cpu_seconds_total{mode!=\"idle\",mode!=\"iowait\",instance=~\"%s\"}[3m]))by(instance))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.Core,
-			},
-			PrimaryUnit: "Core",
-		},
-		NodeCpuTop5Projects: {
-			Label: "CPU(TOP5 OF PROJECTS)",
-			QueryTemplates: []string{
-				// 노드의 네임스페이스 중 CPU 사용량에 따른 내림차순 목록(TOP5)
-				"topk(5,sort_desc(sum(rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\",node=~\"%s\"}[3m]))by(namespace)))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"node"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.Core,
-			},
-			PrimaryUnit: "Core",
-		},
-		NodeCpuTop5Pods: {
-			Label: "CPU(TOP5 OF PODS)",
-			QueryTemplates: []string{
-				// 노드의 파드 중 CPU 사용량에 따른 내림차순 목록(TOP5)
-				"topk(5,sort_desc(sum(rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\",node=~\"%s\",namespace=~\"%s\"}[3m]))by(pod)))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"node", "namespace"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.Core,
-			},
-			PrimaryUnit: "Core",
-		},
-		NodeMemory: {
-			Label: "MEMORY",
-			QueryTemplates: []string{
-				// 노드의 메모리 사용량(byte)
-				"sum(node_memory_MemTotal_bytes{instance=~\"%s\"}-node_memory_MemAvailable_bytes{instance=~\"%s\"})",
-				// 노드의 총 메모리 크기
-				"sum(node_memory_MemTotal_bytes{instance=~\"%s\"})",
-				// 노드의 메모리 사용량(%)
-				"sum(node_memory_MemTotal_bytes{instance=~\"%s\"}-node_memory_MemAvailable_bytes{instance=~\"%s\"})/sum(node_memory_MemTotal_bytes{instance=~\"%s\"})*100",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance", "instance"}, false),
-				queryGenerator([]interface{}{"instance"}, false),
-				queryGenerator([]interface{}{"instance", "instance", "instance"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.BinaryBytes,
-				common.BinaryBytes,
-				common.Percentage,
-			},
-			PrimaryUnit: "B",
-		},
-		NodeMemoryTop: {
-			Label: "MEMORY",
-			QueryTemplates: []string{
-				// 노드의 MEMORY 사용량에 따른 노드 내림차순 목록
-				"sort_desc(sum(node_memory_MemTotal_bytes-node_memory_MemAvailable_bytes{instance=~\"%s\"})by(instance))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.BinaryBytes,
-			},
-			PrimaryUnit: "B",
-		},
-		NodeMemoryTop5Projects: {
-			Label: "MEMORY(TOP5 OF PROJECTS)",
-			QueryTemplates: []string{
-				// 노드의 네임스페이스 중 MEMORY 사용량에 따른 내림차순 목록(TOP5)
-				"topk(5,sort_desc(sum(container_memory_working_set_bytes{container!=\"\",pod!=\"\",node=~\"%s\"})by(namespace)))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"node"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.BinaryBytes,
-			},
-			PrimaryUnit: "B",
-		},
-		NodeMemoryTop5Pods: {
-			Label: "MEMORY(TOP5 OF PODS)",
-			QueryTemplates: []string{
-				// 노드의 파드 중 MEMORY 사용량에 따른 내림차순 목록(TOP5)
-				"topk(5,sort_desc(sum(container_memory_working_set_bytes{container!=\"\",pod!=\"\",node=~\"%s\"})by(pod)))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"node"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.BinaryBytes,
-			},
-			PrimaryUnit: "B",
 		},
 		NodeFileSystem: {
 			Label: "FILE SYSTEM",
@@ -268,45 +233,25 @@ var (
 			},
 			PrimaryUnit: "B",
 		},
-		NodeFileSystemTop: {
-			Label: "FILE SYSTEM",
+		NodeMemory: {
+			Label: "MEMORY",
 			QueryTemplates: []string{
-				// 노드의 FILE SYSTEM 사용량에 따른 노드 내림차순 목록
-				"sort_desc(sum(node_filesystem_size_bytes{instance=~\"%s\",mountpoint=\"/\",fstype!=\"rootfs\"}-node_filesystem_avail_bytes{instance=~\"%s\",mountpoint=\"/\",fstype!=\"rootfs\"})by(instance))",
+				// 노드의 메모리 사용량(byte)
+				"sum(node_memory_MemTotal_bytes{instance=~\"%s\"}-node_memory_MemAvailable_bytes{instance=~\"%s\"})",
+				// 노드의 총 메모리 크기
+				"sum(node_memory_MemTotal_bytes{instance=~\"%s\"})",
+				// 노드의 메모리 사용량(%)
+				"sum(node_memory_MemTotal_bytes{instance=~\"%s\"}-node_memory_MemAvailable_bytes{instance=~\"%s\"})/sum(node_memory_MemTotal_bytes{instance=~\"%s\"})*100",
 			},
 			QueryGenerators: QueryGenerators{
 				queryGenerator([]interface{}{"instance", "instance"}, false),
+				queryGenerator([]interface{}{"instance"}, false),
+				queryGenerator([]interface{}{"instance", "instance", "instance"}, false),
 			},
 			UnitTypeKeys: []common.UnitTypeKey{
 				common.BinaryBytes,
-			},
-			PrimaryUnit: "B",
-		},
-		NodeFileSystemTop5Projects: {
-			Label: "FILE SYSTEM(TOP5 OF PROJECTS)",
-			QueryTemplates: []string{
-				// 노드의 네임스페이스 중 FILE SYSTEM 사용량에 따른 내림차순 목록(TOP5)
-				"topk(5,sort_desc(sum(container_fs_usage_bytes{container!=\"\",pod!=\"\",node=~\"%s\"})by(namespace)))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"node"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
 				common.BinaryBytes,
-			},
-			PrimaryUnit: "B",
-		},
-		NodeFileSystemTop5Pods: {
-			Label: "FILE SYSTEM(TOP5 OF PODS)",
-			QueryTemplates: []string{
-				// 노드의 파드 중 FILE SYSTEM 사용량에 따른 내림차순 목록(TOP5)
-				"topk(5,sort_desc(sum(container_fs_usage_bytes{container!=\"\",pod!=\"\",node=~\"%s\"})by(pod)))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"node"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.BinaryBytes,
+				common.Percentage,
 			},
 			PrimaryUnit: "B",
 		},
@@ -318,48 +263,6 @@ var (
 			},
 			QueryGenerators: QueryGenerators{
 				queryGenerator([]interface{}{"instance"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.DecimalBytesPerSec,
-			},
-			PrimaryUnit: "Bps",
-		},
-		NodeNetworkInTop: {
-			Label: "NETWORK IN",
-			QueryTemplates: []string{
-				// 노드의 NETWORK IN 에 따른 노드 내림차순 목록
-				"sort_desc(sum(rate(node_network_receive_bytes_total{instance=~\"%s\"}[3m]))by(instance))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.DecimalBytesPerSec,
-			},
-			PrimaryUnit: "Bps",
-		},
-		NodeNetworkInTop5Projects: {
-			Label: "NETWORK IN(TOP5 OF PROJECTS)",
-			QueryTemplates: []string{
-				// 노드의 네임스페이스 중 NETWORK IN 에 따른 내림차순 목록(TOP5)
-				"topk(5,sort_desc(sum(rate(container_network_receive_bytes_total{node=~\"%s\",namespace!=\"\"}[3m]))by(namespace)))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"node"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.DecimalBytesPerSec,
-			},
-			PrimaryUnit: "Bps",
-		},
-		NodeNetworkInTop5Pods: {
-			Label: "NETWORK IN(TOP5 OF PODS)",
-			QueryTemplates: []string{
-				// 노드의 파드 중 NETWORK IN 에 따른 내림차순 목록(TOP5)
-				"topk(5,sort_desc(sum(rate(container_network_receive_bytes_total{node=~\"%s\",pod!= \"\"}[3m]))by(pod)))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"node"}, false),
 			},
 			UnitTypeKeys: []common.UnitTypeKey{
 				common.DecimalBytesPerSec,
@@ -380,7 +283,65 @@ var (
 			},
 			PrimaryUnit: "Bps",
 		},
-		NodeNetworkOutTop: {
+
+		// Top 메트릭
+		TopNodeCpuByInstance: {
+			Label: "CPU",
+			QueryTemplates: []string{
+				// 노드의 CPU 사용량에 따른 노드 내림차순 목록
+				"sort_desc(sum(rate(node_cpu_seconds_total{mode!=\"idle\",mode!=\"iowait\",instance=~\"%s\"}[3m]))by(instance))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"instance"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Core,
+			},
+			PrimaryUnit: "Core",
+		},
+		TopNodeFileSystemByInstance: {
+			Label: "FILE SYSTEM",
+			QueryTemplates: []string{
+				// 노드의 FILE SYSTEM 사용량에 따른 노드 내림차순 목록
+				"sort_desc(sum(node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"rootfs\",instance=~\"%s\"}-node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"rootfs\",instance=~\"%s\"})by(instance))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"instance", "instance"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+			},
+			PrimaryUnit: "B",
+		},
+		TopNodeMemoryByInstance: {
+			Label: "MEMORY",
+			QueryTemplates: []string{
+				// 노드의 MEMORY 사용량에 따른 노드 내림차순 목록
+				"sort_desc(sum(node_memory_MemTotal_bytes-node_memory_MemAvailable_bytes{instance=~\"%s\"})by(instance))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"instance"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+			},
+			PrimaryUnit: "B",
+		},
+		TopNodeNetworkInByInstance: {
+			Label: "NETWORK IN",
+			QueryTemplates: []string{
+				// 노드의 NETWORK IN 에 따른 노드 내림차순 목록
+				"sort_desc(sum(rate(node_network_receive_bytes_total{instance=~\"%s\"}[3m]))by(instance))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"instance"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.DecimalBytesPerSec,
+			},
+			PrimaryUnit: "Bps",
+		},
+		TopNodeNetworkOutByInstance: {
 			Label: "NETWORK OUT",
 			QueryTemplates: []string{
 				// 노드의 NETWORK OUT 에 따른 노드 내림차순 목록
@@ -394,11 +355,139 @@ var (
 			},
 			PrimaryUnit: "Bps",
 		},
-		NodeNetworkOutTop5Projects: {
+		TopCountPodByNode: {
+			Label: "POD COUNT",
+			QueryTemplates: []string{
+				// 노드별 파드 수에 따른 내림차순 목록
+				"sort_desc(count(kube_pod_info{node!=\"\",node=~\"%s\"})by(node))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"node"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Count,
+			},
+			PrimaryUnit: "",
+		},
+
+		// TopN 메트릭
+		Top5ContainerCpuByNamespace: {
+			Label: "CPU(TOP5 OF PROJECTS)",
+			QueryTemplates: []string{
+				// 네임스페이스별 CPU 사용량에 따른 내림차순 목록
+				"topk(5,sort_desc(sum(rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\",node=~\"%s\"}[3m]))by(namespace)))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"node"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Core,
+			},
+			PrimaryUnit: "Core",
+		},
+		Top5ContainerCpuByPod: {
+			Label: "CPU(TOP5 OF PODS)",
+			QueryTemplates: []string{
+				// 파드별 CPU 사용량에 따른 내림차순 목록
+				"topk(5,sort_desc(sum(rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\",node=~\"%s\",namespace=~\"%s\"}[3m]))by(pod)))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"node", "namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Core,
+			},
+			PrimaryUnit: "Core",
+		},
+		Top5ContainerFileSystemByNamespace: {
+			Label: "FILE SYSTEM(TOP5 OF PROJECTS)",
+			QueryTemplates: []string{
+				// 노드의 네임스페이스 중 FILE SYSTEM 사용량에 따른 내림차순 목록
+				"topk(5,sort_desc(sum(container_fs_usage_bytes{container!=\"\",pod!=\"\",node=~\"%s\"})by(namespace)))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"node"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+			},
+			PrimaryUnit: "B",
+		},
+		Top5ContainerFileSystemByPod: {
+			Label: "FILE SYSTEM(TOP5 OF PODS)",
+			QueryTemplates: []string{
+				// 파드별 FILE SYSTEM 사용량에 따른 내림차순 목록
+				"topk(5,sort_desc(sum(container_fs_usage_bytes{container!=\"\",pod!=\"\",node=~\"%s\",namespace=~\"%s\"})by(pod)))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"node", "namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+			},
+			PrimaryUnit: "B",
+		},
+		Top5ContainerMemoryByNamespace: {
+			Label: "MEMORY(TOP5 OF PROJECTS)",
+			QueryTemplates: []string{
+				// 네임스페이스별 MEMORY 사용량에 따른 내림차순 목록
+				"topk(5,sort_desc(sum(container_memory_working_set_bytes{container!=\"\",pod!=\"\",node=~\"%s\"})by(namespace)))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"node"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+			},
+			PrimaryUnit: "B",
+		},
+		Top5ContainerMemoryByPod: {
+			Label: "MEMORY(TOP5 OF PODS)",
+			QueryTemplates: []string{
+				// 파드별 MEMORY 사용량에 따른 내림차순 목록
+				"topk(5,sort_desc(sum(container_memory_working_set_bytes{container!=\"\",pod!=\"\",node=~\"%s\",namespace=~\"%s\"})by(pod)))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"node", "namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+			},
+			PrimaryUnit: "B",
+		},
+		Top5ContainerNetworkInByNamespace: {
+			Label: "NETWORK IN(TOP5 OF PROJECTS)",
+			QueryTemplates: []string{
+				// NETWORK IN 에 따른 Top 5 내림차순 목록
+				"topk(5,sort_desc(sum(rate(container_network_receive_bytes_total{container=\"POD\",pod!=\"\",node=~\"%s\",namespace=~\"%s\"}[3m]))by(namespace)))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"node", "namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.DecimalBytesPerSec,
+			},
+			PrimaryUnit: "Bps",
+		},
+		Top5ContainerNetworkInByPod: {
+			Label: "NETWORK IN(TOP5 OF PODS)",
+			QueryTemplates: []string{
+				// NETWORK IN 에 따른 Top 5 내림차순 목록
+				"topk(5,sort_desc(sum(rate(container_network_receive_bytes_total{container=\"POD\",pod!=\"\",node=~\"%s\",namespace=~\"%s\"}[3m]))by(pod)))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"node", "namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.DecimalBytesPerSec,
+			},
+			PrimaryUnit: "Bps",
+		},
+		Top5ContainerNetworkOutByNamespace: {
 			Label: "NETWORK OUT(TOP5 OF PROJECTS)",
 			QueryTemplates: []string{
-				// 노드의 네임스페이스 중 NETWORK OUT 에 따른 내림차순 목록(TOP5)
-				"topk(5,sort_desc(sum(rate(container_network_receive_bytes_total{node=~\"%s\",namespace!=\"\"}[3m]))by(namespace)))",
+				// 노드의 네임스페이스 중 NETWORK OUT 에 따른 내림차순 목록
+				"topk(5,sort_desc(sum(rate(container_network_receive_bytes_total{namespace!=\"\",node=~\"%s\"}[3m]))by(namespace)))",
 			},
 			QueryGenerators: QueryGenerators{
 				queryGenerator([]interface{}{"node"}, false),
@@ -408,61 +497,57 @@ var (
 			},
 			PrimaryUnit: "Bps",
 		},
-		NodeNetworkOutTop5Pods: {
+		Top5ContainerNetworkOutByPod: {
 			Label: "NETWORK OUT(TOP5 OF PODS)",
 			QueryTemplates: []string{
-				// 노드의 파드 중 NETWORK OUT 에 따른 내림차순 목록(TOP5)
-				"topk(5,sort_desc(sum(rate(container_network_receive_bytes_total{node=~\"%s\",pod!= \"\"}[3m]))by(pod)))",
+				// 파드 중 NETWORK OUT 에 따른 내림차순 목록
+				"topk(5,sort_desc(sum(rate(container_network_receive_bytes_total{pod!= \"\",node=~\"%s\",namespace=~\"%s\"}[3m]))by(pod)))",
 			},
 			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"node"}, false),
+				queryGenerator([]interface{}{"node", "namespace"}, false),
 			},
 			UnitTypeKeys: []common.UnitTypeKey{
 				common.DecimalBytesPerSec,
 			},
 			PrimaryUnit: "Bps",
 		},
-		NodePodCount: {
-			Label: "POD COUNT",
-			QueryTemplates: []string{
-				// 노드의 파드 수
-				"sum(kube_pod_info{node=~\"%s\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"node"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.Count,
-			},
-			PrimaryUnit: "",
-		},
-		NodePodCountTop: {
-			Label: "POD COUNT",
-			QueryTemplates: []string{
-				// 노드의 파드 수에 따른 노드 내림차순 목록
-				"sort_desc(sum(kube_pod_info{node=~\"%s\",node!=\"\"})by(node))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"node"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.Count,
-			},
-			PrimaryUnit: "",
-		},
-		NodePodCountTop5Projects: {
+		Top5CountPodByNamespace: {
 			Label: "POD COUNT(TOP5 OF PROJECTS)",
 			QueryTemplates: []string{
-				// 노드의 네임스페이스 중 파드 수에 따른 내림차순 목록(TOP5)
-				"topk(5,sort_desc(sum(kube_pod_info{node=~\"%s\"})by(namespace)))",
+				// 노드의 네임스페이스 중 파드 수에 따른 내림차순 목록
+				"topk(5,sort_desc(count(kube_pod_info{node=~\"%s\",namespace=~\"%s\"})by(namespace)))",
 			},
 			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"node"}, false),
+				queryGenerator([]interface{}{"node", "namespace"}, false),
 			},
 			UnitTypeKeys: []common.UnitTypeKey{
 				common.Count,
 			},
 			PrimaryUnit: "",
+		},
+
+		// 리소스 쿼터에 대한 메트릭
+		QuotaCpuLimit: {
+			Label: "CPU LIMIT",
+			QueryTemplates: []string{
+				// 할당된 CPU LIMIT 쿼터
+				"sum(kube_resourcequota{resource=\"limits.cpu\"})",
+				// 노드의 CPU Core 수
+				"sum(kube_node_status_capacity{resource=\"cpu\",unit=\"core\"})",
+				// 노드에 할당된 CPU LIMIT 쿼터 할당량(%)
+				"sum(kube_resourcequota{resource=\"limits.cpu\"})/sum(kube_node_status_capacity{resource=\"cpu\",unit=\"core\"})*100",
+			},
+			QueryGenerators: QueryGenerators{
+				nil,
+				nil,
+				nil,
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+				"",
+				common.Percentage,
+			},
+			PrimaryUnit: "Core",
 		},
 		QuotaCpuRequest: {
 			Label: "CPU REQUEST",
@@ -486,15 +571,15 @@ var (
 			},
 			PrimaryUnit: "Core",
 		},
-		QuotaCpuLimit: {
-			Label: "CPU LIMIT",
+		QuotaMemoryLimit: {
+			Label: "MEMORY LIMIT",
 			QueryTemplates: []string{
-				// 할당된 CPU LIMIT 쿼터
-				"sum(kube_resourcequota{resource=\"limits.cpu\"})",
-				// 노드의 CPU Core 수
-				"sum(kube_node_status_capacity{resource=\"cpu\",unit=\"core\"})",
-				// 노드에 할당된 CPU LIMIT 쿼터 할당량(%)
-				"sum(kube_resourcequota{resource=\"limits.cpu\"})/sum(kube_node_status_capacity{resource=\"cpu\",unit=\"core\"})*100",
+				// 할당된 MEMORY LIMIT 쿼터
+				"sum(kube_resourcequota{resource=\"limits.memory\"})",
+				// 노드의 총 메모리 크기
+				"sum(node_memory_MemTotal_bytes)",
+				// 노드에 할당된 MEMORY LIMIT 쿼터 할당량(%)
+				"sum(kube_resourcequota{resource=\"limits.memory\"})/sum(node_memory_MemTotal_bytes)*100",
 			},
 			QueryGenerators: QueryGenerators{
 				nil,
@@ -502,11 +587,11 @@ var (
 				nil,
 			},
 			UnitTypeKeys: []common.UnitTypeKey{
-				"",
-				"",
+				common.BinaryBytes,
+				common.BinaryBytes,
 				common.Percentage,
 			},
-			PrimaryUnit: "Core",
+			PrimaryUnit: "B",
 		},
 		QuotaMemoryRequest: {
 			Label: "MEMORY REQUEST",
@@ -530,45 +615,9 @@ var (
 			},
 			PrimaryUnit: "B",
 		},
-		QuotaMemoryLimit: {
-			Label: "MEMORY LIMIT",
-			QueryTemplates: []string{
-				// 할당된 MEMORY LIMIT 쿼터
-				"sum(kube_resourcequota{resource=\"limits.memory\"})",
-				// 노드의 총 메모리 크기
-				"sum(node_memory_MemTotal_bytes)",
-				// 노드에 할당된 MEMORY LIMIT 쿼터 할당량(%)
-				"sum(kube_resourcequota{resource=\"limits.memory\"})/sum(node_memory_MemTotal_bytes)*100",
-			},
-			QueryGenerators: QueryGenerators{
-				nil,
-				nil,
-				nil,
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.BinaryBytes,
-				common.BinaryBytes,
-				common.Percentage,
-			},
-			PrimaryUnit: "B",
-		},
-		RangeNodeCpuUsage: {
-			Label: "CPU USAGE",
-			SubLabels: []string{
-				"CPU USAGE",
-			},
-			QueryTemplates: []string{
-				"sum(rate(node_cpu_seconds_total{mode!=\"idle\",mode!=\"iowait\",instance=~\"%s\"}[3m]))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance"}, true),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.Core,
-			},
-			PrimaryUnit: "Core",
-		},
-		RangeContainerCpuUsage: {
+
+		// Timestamp 값을 가진 Range 메트릭
+		RangeContainerCpu: {
 			Label: "CPU USAGE",
 			SubLabels: []string{
 				"CPU USAGE",
@@ -584,47 +633,7 @@ var (
 			},
 			PrimaryUnit: "Core",
 		},
-		RangeCpuLoadAverage: {
-			Label: "CPU LOAD AVERAGE",
-			SubLabels: []string{
-				"LOAD AVERAGE 1",
-				"LOAD AVERAGE 5",
-				"LOAD AVERAGE 15",
-			},
-			QueryTemplates: []string{
-				"sum(node_load1{job=\"node-exporter\",instance=~\"%s\"})",
-				"sum(node_load5{job=\"node-exporter\",instance=~\"%s\"})",
-				"sum(node_load15{job=\"node-exporter\",instance=~\"%s\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance"}, true),
-				queryGenerator([]interface{}{"instance"}, true),
-				queryGenerator([]interface{}{"instance"}, true),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.Core,
-				common.Core,
-				common.Core,
-			},
-			PrimaryUnit: "Core",
-		},
-		RangeNodeMemoryUsage: {
-			Label: "MEMORY USAGE",
-			SubLabels: []string{
-				"MEMORY USAGE",
-			},
-			QueryTemplates: []string{
-				"sum(node_memory_MemTotal_bytes{instance=~\"%s\"}-node_memory_MemAvailable_bytes{instance=~\"%s\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance", "instance"}, true),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.BinaryBytes,
-			},
-			PrimaryUnit: "B",
-		},
-		RangeContainerMemoryUsage: {
+		RangeContainerMemory: {
 			Label: "MEMORY USAGE",
 			SubLabels: []string{
 				"MEMORY USAGE",
@@ -639,38 +648,6 @@ var (
 				common.BinaryBytes,
 			},
 			PrimaryUnit: "B",
-		},
-		RangeMemorySwap: {
-			Label: "MEMORY SWAP",
-			SubLabels: []string{
-				"MEMORY SWAP",
-			},
-			QueryTemplates:  []string{},
-			QueryGenerators: QueryGenerators{},
-			UnitTypeKeys:    []common.UnitTypeKey{},
-			PrimaryUnit:     "",
-		},
-		RangeNodeNetworkIO: {
-			Label: "NETWORK IO",
-			SubLabels: []string{
-				"NETWORK IN",
-				"NETWORK OUT",
-			},
-			QueryTemplates: []string{
-				// 컨테이너의 NETWORK IN(bps)
-				"sum(rate(node_network_receive_bytes_total{instance=~\"%s\"}[3m]))",
-				// 컨테이너의 NETWORK OUT(bps)
-				"sum(rate(node_network_transmit_bytes_total{instance=~\"%s\"}[3m]))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance"}, true),
-				queryGenerator([]interface{}{"instance"}, true),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.DecimalBytesPerSec,
-				common.DecimalBytesPerSec,
-			},
-			PrimaryUnit: "Bps",
 		},
 		RangeContainerNetworkIO: {
 			Label: "NETWORK IO",
@@ -694,28 +671,6 @@ var (
 			},
 			PrimaryUnit: "Bps",
 		},
-		RangeNodeNetworkPacket: {
-			Label: "NETWORK PACKET",
-			SubLabels: []string{
-				"NETWORK RECEIVE",
-				"NETWORK TRANSMIT",
-			},
-			QueryTemplates: []string{
-				// 노드의 NETWORK IN(bps)
-				"sum(rate(node_network_receive_packets_total{instance=~\"%s\"}[3m]))",
-				// 노드의 NETWORK OUT(bps)
-				"sum(rate(node_network_transmit_packets_total{instance=~\"%s\"}[3m]))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance"}, true),
-				queryGenerator([]interface{}{"instance"}, true),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.PacketsPerSec,
-				common.PacketsPerSec,
-			},
-			PrimaryUnit: "pps",
-		},
 		RangeContainerNetworkPacket: {
 			Label: "NETWORK PACKET",
 			SubLabels: []string{
@@ -723,9 +678,7 @@ var (
 				"NETWORK TRANSMIT",
 			},
 			QueryTemplates: []string{
-				// 컨테이너의 NETWORK IN(bps)
 				"sum(rate(container_network_receive_packets_total{container=\"POD\",pod!=\"\",namespace=~\"%s\"}[3m]))",
-				// 컨테이너의 NETWORK OUT(bps)
 				"sum(rate(container_network_transmit_packets_total{container=\"POD\",pod!=\"\",namespace=~\"%s\"}[3m]))",
 			},
 			QueryGenerators: QueryGenerators{
@@ -737,6 +690,27 @@ var (
 				common.PacketsPerSec,
 			},
 			PrimaryUnit: "pps",
+		},
+		RangeDiskIO: {
+			Label: "DISK IO",
+			SubLabels: []string{
+				"DISK IN",
+				"DISK OUT",
+			},
+			QueryTemplates:  []string{},
+			QueryGenerators: QueryGenerators{},
+			UnitTypeKeys:    []common.UnitTypeKey{},
+			PrimaryUnit:     "",
+		},
+		RangeFileSystem: {
+			Label: "FILE SYSTEM",
+			SubLabels: []string{
+				"FILE SYSTEM",
+			},
+			QueryTemplates:  []string{},
+			QueryGenerators: QueryGenerators{},
+			UnitTypeKeys:    []common.UnitTypeKey{},
+			PrimaryUnit:     "",
 		},
 		RangeNetworkBandwidth: {
 			Label: "NETWORK BANDWIDTH",
@@ -770,26 +744,110 @@ var (
 			UnitTypeKeys:    []common.UnitTypeKey{},
 			PrimaryUnit:     "",
 		},
-		RangeFileSystem: {
-			Label: "FILE SYSTEM",
+		RangeNodeCpu: {
+			Label: "CPU USAGE",
 			SubLabels: []string{
-				"FILE SYSTEM",
+				"CPU USAGE",
 			},
-			QueryTemplates:  []string{},
-			QueryGenerators: QueryGenerators{},
-			UnitTypeKeys:    []common.UnitTypeKey{},
-			PrimaryUnit:     "",
+			QueryTemplates: []string{
+				"sum(rate(node_cpu_seconds_total{mode!=\"idle\",mode!=\"iowait\",instance=~\"%s\"}[3m]))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"instance"}, true),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Core,
+			},
+			PrimaryUnit: "Core",
 		},
-		RangeDiskIO: {
-			Label: "DISK IO",
+		RangeNodeCpuLoadAverage: {
+			Label: "CPU LOAD AVERAGE",
 			SubLabels: []string{
-				"DISK IN",
-				"DISK OUT",
+				"LOAD AVERAGE 1",
+				"LOAD AVERAGE 5",
+				"LOAD AVERAGE 15",
 			},
-			QueryTemplates:  []string{},
-			QueryGenerators: QueryGenerators{},
-			UnitTypeKeys:    []common.UnitTypeKey{},
-			PrimaryUnit:     "",
+			QueryTemplates: []string{
+				"sum(node_load1{job=\"node-exporter\",instance=~\"%s\"})",
+				"sum(node_load5{job=\"node-exporter\",instance=~\"%s\"})",
+				"sum(node_load15{job=\"node-exporter\",instance=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"instance"}, true),
+				queryGenerator([]interface{}{"instance"}, true),
+				queryGenerator([]interface{}{"instance"}, true),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Core,
+				common.Core,
+				common.Core,
+			},
+			PrimaryUnit: "Core",
+		},
+		RangeNodeMemory: {
+			Label: "MEMORY USAGE",
+			SubLabels: []string{
+				"MEMORY USAGE",
+			},
+			QueryTemplates: []string{
+				"sum(node_memory_MemTotal_bytes{instance=~\"%s\"}-node_memory_MemAvailable_bytes{instance=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"instance", "instance"}, true),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+			},
+			PrimaryUnit: "B",
+		},
+		RangeNodeNetworkIO: {
+			Label: "NETWORK IO",
+			SubLabels: []string{
+				"NETWORK IN",
+				"NETWORK OUT",
+			},
+			QueryTemplates: []string{
+				// 컨테이너의 NETWORK IN(bps)
+				"sum(rate(node_network_receive_bytes_total{instance=~\"%s\"}[3m]))",
+				// 컨테이너의 NETWORK OUT(bps)
+				"sum(rate(node_network_transmit_bytes_total{instance=~\"%s\"}[3m]))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"instance"}, true),
+				queryGenerator([]interface{}{"instance"}, true),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.DecimalBytesPerSec,
+				common.DecimalBytesPerSec,
+			},
+			PrimaryUnit: "Bps",
+		},
+		RangeNodeNetworkPacket: {
+			Label: "NETWORK PACKET",
+			SubLabels: []string{
+				"NETWORK RECEIVE",
+				"NETWORK TRANSMIT",
+			},
+			QueryTemplates: []string{
+				// 노드의 NETWORK IN(bps)
+				"sum(rate(node_network_receive_packets_total{instance=~\"%s\"}[3m]))",
+				// 노드의 NETWORK OUT(bps)
+				"sum(rate(node_network_transmit_packets_total{instance=~\"%s\"}[3m]))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"instance"}, true),
+				queryGenerator([]interface{}{"instance"}, true),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.PacketsPerSec,
+				common.PacketsPerSec,
+			},
+			PrimaryUnit: "pps",
+		},
+
+		// 정의된 메트릭을 사용하는 메트릭
+		SummaryNodeInfo: {
+			MetricKeys: []MetricKey{NodeCpu, NodeMemory, NodeFileSystem, NodeNetworkIn, NodeNetworkOut, NumberOfPod},
 		},
 	}
 )

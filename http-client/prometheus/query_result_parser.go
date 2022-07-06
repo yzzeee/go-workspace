@@ -21,12 +21,11 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 	var response = make(map[string]interface{})
 	switch metricKey {
 	case // (1)
-		Quota, ContainerCpu, ContainerMemory,
-		ContainerFileSystem, ContainerNetworkIn, ContainerNetworkOut,
-		NodeCpu, NodeMemory, NodeFileSystem,
-		NodeNetworkIn, NodeNetworkOut, NodePodCount,
-		QuotaCpuRequest, QuotaCpuLimit, QuotaMemoryRequest,
-		QuotaMemoryLimit:
+		ContainerCpu, ContainerFileSystem, ContainerMemory, ContainerNetworkIn, ContainerNetworkOut,
+		NodeCpu, NodeFileSystem, NodeMemory, NodeNetworkIn, NodeNetworkOut,
+		NumberOfDeployment, NumberOfIngress, NumberOfPod, NumberOfNamespace, NumberOfService,
+		NumberOfStatefulSet, NumberOfVolume, QuotaCpuLimit, QuotaCpuRequest, QuotaMemoryLimit,
+		QuotaMemoryRequest:
 		response = make(map[string]interface{})
 		_ = json.Unmarshal(responseBytes, &response)
 		for _, ele := range response["data"].(map[string]interface{})["result"].([]interface{}) {
@@ -34,12 +33,10 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 			maxValue, _ = strconv.ParseFloat(fmt.Sprintf("%s", result1), 64)
 		}
 	case // (2)
-		NodeCpuTop, NodeCpuTop5Projects, NodeCpuTop5Pods,
-		NodeMemoryTop, NodeMemoryTop5Projects, NodeMemoryTop5Pods,
-		NodeFileSystemTop, NodeFileSystemTop5Projects, NodeFileSystemTop5Pods,
-		NodeNetworkInTop, NodeNetworkInTop5Projects, NodeNetworkInTop5Pods,
-		NodeNetworkOutTop, NodeNetworkOutTop5Projects, NodeNetworkOutTop5Pods,
-		NodePodCountTop, NodePodCountTop5Projects:
+		TopNodeCpuByInstance, TopNodeFileSystemByInstance, TopNodeMemoryByInstance, TopNodeNetworkInByInstance, TopNodeNetworkOutByInstance,
+		TopCountPodByNode, Top5ContainerCpuByNamespace, Top5ContainerCpuByPod, Top5ContainerFileSystemByNamespace, Top5ContainerFileSystemByPod,
+		Top5ContainerMemoryByNamespace, Top5ContainerMemoryByPod, Top5ContainerNetworkInByNamespace, Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByNamespace,
+		Top5ContainerNetworkOutByPod, Top5CountPodByNamespace:
 		response = make(map[string]interface{})
 		_ = json.Unmarshal(responseBytes, &response)
 
@@ -48,19 +45,17 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 
 			switch metricKey {
 			case
-				NodePodCountTop:
+				TopCountPodByNode:
 				temp["id"] = common.Get(ele, "metric.node")
 			case
-				NodeCpuTop, NodeMemoryTop, NodeFileSystemTop,
-				NodeNetworkInTop, NodeNetworkOutTop:
+				TopNodeCpuByInstance, TopNodeMemoryByInstance, TopNodeFileSystemByInstance, TopNodeNetworkInByInstance, TopNodeNetworkOutByInstance:
 				temp["id"] = common.Get(ele, "metric.instance")
 			case
-				NodeCpuTop5Projects, NodeMemoryTop5Projects, NodeFileSystemTop5Projects,
-				NodeNetworkInTop5Projects, NodeNetworkOutTop5Projects, NodePodCountTop5Projects:
+				Top5ContainerCpuByNamespace, Top5ContainerFileSystemByNamespace, Top5ContainerMemoryByNamespace, Top5ContainerNetworkInByNamespace, Top5ContainerNetworkOutByNamespace,
+				Top5CountPodByNamespace:
 				temp["id"] = common.Get(ele, "metric.namespace")
 			case
-				NodeCpuTop5Pods, NodeMemoryTop5Pods, NodeFileSystemTop5Pods,
-				NodeNetworkInTop5Pods, NodeNetworkOutTop5Pods:
+				Top5ContainerCpuByPod, Top5ContainerFileSystemByPod, Top5ContainerMemoryByPod, Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByPod:
 				temp["id"] = common.Get(ele, "metric.pod")
 			}
 			temp["timestamp"] = common.Get(ele, "value").([]interface{})[0] // value 의 첫 번째 원소는 timestamp
@@ -77,11 +72,9 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 			}
 		}
 	case // (3)
-		RangeNodeCpuUsage, RangeContainerCpuUsage, RangeCpuLoadAverage,
-		RangeNodeMemoryUsage, RangeContainerMemoryUsage, RangeMemorySwap,
-		RangeNodeNetworkIO, RangeContainerNetworkIO, RangeNodeNetworkPacket,
-		RangeContainerNetworkPacket, RangeNetworkBandwidth, RangeNetworkPacketReceiveTransmit,
-		RangeNetworkPacketReceiveTransmitDrop, RangeFileSystem, RangeDiskIO:
+		RangeContainerCpu, RangeContainerMemory, RangeNodeNetworkIO, RangeContainerNetworkIO, RangeNodeNetworkPacket,
+		RangeContainerNetworkPacket, RangeFileSystem, RangeDiskIO, RangeNetworkBandwidth, RangeNetworkPacketReceiveTransmit,
+		RangeNetworkPacketReceiveTransmitDrop, RangeNodeCpu, RangeNodeCpuLoadAverage, RangeNodeMemory:
 		_ = json.Unmarshal(responseBytes, &response)
 		fmt.Println(len(common.Get(response, "data.result").([]interface{})))
 		if len(common.Get(response, "data.result").([]interface{})) != 0 {

@@ -28,10 +28,8 @@ type MetricResponse struct {
 func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, maxValueUnit string, subLabels []string, resultSets ...interface{}) MetricResponse {
 	switch metricKey {
 	case // (1)
-		Quota,
-		NodeCpu, NodeMemory, NodeFileSystem,
-		QuotaCpuRequest, QuotaCpuLimit, QuotaMemoryRequest,
-		QuotaMemoryLimit:
+		NodeCpu, NodeFileSystem, NodeMemory, QuotaCpuLimit, QuotaCpuRequest,
+		QuotaMemoryLimit, QuotaMemoryRequest:
 		if len(resultSets) != 0 {
 			var resultSet0, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[0]), 64)
 			var resultSet1, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[1]), 64)
@@ -52,9 +50,9 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, 
 			}
 		}
 	case // (2)
-		ContainerCpu, ContainerMemory, ContainerFileSystem,
-		ContainerNetworkIn, ContainerNetworkOut,
-		NodeNetworkIn, NodeNetworkOut, NodePodCount:
+		ContainerCpu, ContainerFileSystem, ContainerMemory, ContainerNetworkIn, ContainerNetworkOut,
+		NumberOfDeployment, NumberOfIngress, NumberOfPod, NumberOfNamespace, NumberOfService,
+		NumberOfStatefulSet, NumberOfVolume, NodeNetworkIn, NodeNetworkOut:
 		var resultSet0, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[0]), 64)
 
 		if unitTypeKeys != nil && unitTypeKeys[0] != "" {
@@ -64,12 +62,10 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, 
 			Usage: fmt.Sprintf("%v", resultSet0),
 		}
 	case // (3)
-		NodeCpuTop, NodeCpuTop5Projects, NodeCpuTop5Pods,
-		NodeMemoryTop, NodeMemoryTop5Projects, NodeMemoryTop5Pods,
-		NodeFileSystemTop, NodeFileSystemTop5Projects, NodeFileSystemTop5Pods,
-		NodeNetworkInTop, NodeNetworkInTop5Projects, NodeNetworkInTop5Pods,
-		NodeNetworkOutTop, NodeNetworkOutTop5Projects, NodeNetworkOutTop5Pods,
-		NodePodCountTop, NodePodCountTop5Projects:
+		TopNodeCpuByInstance, TopNodeFileSystemByInstance, TopNodeMemoryByInstance, TopNodeNetworkInByInstance, TopNodeNetworkOutByInstance,
+		TopCountPodByNode, Top5ContainerCpuByNamespace, Top5ContainerCpuByPod, Top5ContainerFileSystemByNamespace, Top5ContainerFileSystemByPod,
+		Top5ContainerMemoryByNamespace, Top5ContainerMemoryByPod, Top5ContainerNetworkInByNamespace, Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByNamespace,
+		Top5ContainerNetworkOutByPod, Top5CountPodByNamespace:
 		if len(resultSets) != 0 {
 			var resultSet0 = resultSets[0].(map[int]interface{})
 			if unitTypeKeys != nil && unitTypeKeys[0] != "" {
@@ -85,11 +81,9 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, 
 			}
 		}
 	case // (4)
-		RangeNodeCpuUsage, RangeContainerCpuUsage, RangeCpuLoadAverage,
-		RangeNodeMemoryUsage, RangeContainerMemoryUsage, RangeMemorySwap,
-		RangeNodeNetworkIO, RangeContainerNetworkIO, RangeNodeNetworkPacket,
-		RangeContainerNetworkPacket, RangeNetworkBandwidth, RangeNetworkPacketReceiveTransmit,
-		RangeNetworkPacketReceiveTransmitDrop, RangeFileSystem, RangeDiskIO:
+		RangeContainerCpu, RangeContainerMemory, RangeContainerNetworkIO, RangeContainerNetworkPacket, RangeDiskIO,
+		RangeFileSystem, RangeNodeCpu, RangeNetworkBandwidth, RangeNetworkPacketReceiveTransmit, RangeNetworkPacketReceiveTransmitDrop,
+		RangeNodeCpuLoadAverage, RangeNodeMemory, RangeNodeNetworkIO, RangeNodeNetworkPacket:
 		var resultSet0 []interface{}
 		if len(resultSets) != 0 {
 			resultSet0 = resultSets[0].([]interface{})
@@ -111,13 +105,13 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, 
 			Values: resultSet0,
 		}
 	case // (5)
-		NodeInfo:
+		SummaryNodeInfo:
 		values := make(map[string]interface{})
 		if len(resultSets) != 0 {
 			resultSet0 := resultSets[0].(map[string]interface{})
 			for key, value := range resultSet0 {
 				switch MetricKey(key) {
-				case NodeCpu, NodeMemory, NodeFileSystem:
+				case NodeCpu, NodeFileSystem, NodeMemory:
 					label := fmt.Sprintf("%s", common.Get(value, "Label"))
 					usage := common.Get(value, "Usage")
 					percentage := common.Get(value, "Percentage")
@@ -128,7 +122,7 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, 
 					usage := common.Get(value, "Usage")
 					unit := common.Get(value, "Unit")
 					values[label] = fmt.Sprintf("%s %s", usage, unit)
-				case NodePodCount:
+				case NumberOfPod:
 					label := fmt.Sprintf("%s", common.Get(value, "Label"))
 					usage := common.Get(value, "Usage")
 					values[label] = fmt.Sprintf("%s", usage)
