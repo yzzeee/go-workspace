@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -10,6 +11,9 @@ var KubeConfigPath string
 
 // ClientSettings kube config 설정을 담고 있다
 var ClientSettings *kubernetes.Clientset
+
+// DynamicClient
+var DynamicClient dynamic.Interface
 
 // IgnoreTLSVerification 클라이언트가 Kubernetes API 에 접속할때 TLS 인증을 무시할지 여부
 var IgnoreTLSVerification bool
@@ -26,6 +30,11 @@ func InitConfig() error {
 	}
 
 	ClientSettings, err = kubernetes.NewForConfig(kubeConfig)
+	if err != nil {
+		return err
+	}
+
+	DynamicClient, err = dynamic.NewForConfig(kubeConfig)
 	if err != nil {
 		return err
 	}

@@ -92,7 +92,7 @@ func main() {
 	//var metricKeys = []string{"quota_object_count_services_node_ports"}
 	//var metricKeys = []string{"quota_object_count_resource_quotas"}
 	//var metricKeys = []string{"quota_object_count_persistent_volume_claims"}
-	var metricKeys = []string{"quota_limit_range"}
+	//var metricKeys = []string{"quota_limit_range"}
 	//var metricKeys = []string{"range_node_cpu_usage"}
 	//var metricKeys = []string{"range_container_cpu_usage"}
 	//var metricKeys = []string{"range_cpu_load_average"}
@@ -105,6 +105,7 @@ func main() {
 	//var metricKeys = []string{"range_network_packet_receive_transmit_drop"}
 	//var metricKeys = []string{"range_file_system"}
 	//var metricKeys = []string{"range_disk_io"}
+	var metricKeys = []string{"number_of_pipeline"}
 	//var metricKeys = []string{"node_info"}
 
 	// --- mixed
@@ -136,12 +137,16 @@ func main() {
 		}
 
 		// 최종 결과 확인
+		var err error
 		if metricKey == "quota_limit_range" {
-			var err error
-
-			final, _ = kubernetes.GetLimitRange()
+			final, err = kubernetes.GetLimitRange()
 			if err != nil {
-				fmt.Printf("failed to create request to kubernetes API, err=%s\n", err)
+				fmt.Printf("failed to get limit range by Kubernetes API, err=%s\n", err)
+			}
+		} else if metricKey == "number_of_pipeline" {
+			final, err = kubernetes.GetPipelines()
+			if err != nil {
+				fmt.Printf("failed to get pipeline by Kubernetes API, err=%s\n", err)
 			}
 		} else {
 			final, _ = json.Marshal(result)
