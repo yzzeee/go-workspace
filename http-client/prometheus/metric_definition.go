@@ -45,17 +45,28 @@ var (
 			},
 			PrimaryUnit: "Core",
 		},
+		ContainerInfo: {
+			MetricKeys: []MetricKey{ContainerCpu, ContainerMemory, ContainerFileSystem, ContainerNetworkIn, ContainerNetworkOut, ContainerPodCount},
+		},
 		ContainerCpu: {
 			Label: "CPU",
 			QueryTemplates: []string{
 				// 컨테이너의 CPU Core 사용량(Core)
 				"sum(rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\",namespace=~\"%s\"}[3m]))",
+				// 노드의 CPU Core 수
+				"sum(kube_node_status_capacity{resource=\"cpu\",unit=\"core\",node=~\"%s\"})",
+				// 총 CPU Core 사용량(%)
+				"sum(rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\",namespace=~\"%s\"}[3m]))/sum(kube_node_status_capacity{resource=\"cpu\",unit=\"core\",node=~\"%s\"})*100",
 			},
 			QueryGenerators: QueryGenerators{
 				queryGenerator([]interface{}{"namespace"}, false),
+				queryGenerator([]interface{}{"node"}, false),
+				queryGenerator([]interface{}{"namespace", "node"}, false),
 			},
 			UnitTypeKeys: []common.UnitTypeKey{
 				common.Core,
+				"",
+				common.Percentage,
 			},
 			PrimaryUnit: "Core",
 		},
@@ -64,56 +75,86 @@ var (
 			QueryTemplates: []string{
 				// 컨테이너의 메모리 사용량(byte)
 				"sum(container_memory_working_set_bytes{cluster=\"\",container!=\"\",namespace=~\"%s\"})",
+				// 노드의 총 메모리 크기
+				"sum(node_memory_MemTotal_bytes{instance=~\"%s\"})",
+				// 컨테이너의 메모리 사용량(%)
+				"sum(container_memory_working_set_bytes{cluster=\"\",container!=\"\",namespace=~\"%s\"})/sum(node_memory_MemTotal_bytes{instance=~\"%s\"})*100",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+				queryGenerator([]interface{}{"instance"}, false),
+				queryGenerator([]interface{}{"namespace", "instance"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+				common.BinaryBytes,
+				common.Percentage,
+			},
+			PrimaryUnit: "B",
+		},
+		ContainerFileSystem: {
+			Label: "FILE SYSTEM",
+			QueryTemplates: []string{
+				// 컨테이너의 파일 시스템 사용량(byte)
+				"sum(container_fs_usage_bytes{namespace=~\"%s\"})",
+				// 노드의 총 파일 시스템 크기
+				"sum(node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"rootfs\",instance=~\"%s\"})",
+				// 컨테이너의 파일 시스템 사용량(%)
+				"sum(container_fs_usage_bytes{namespace=~\"%s\"})/sum(node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"rootfs\",instance=~\"%s\"})*100",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+				queryGenerator([]interface{}{"instance"}, false),
+				queryGenerator([]interface{}{"namespace", "instance"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+				common.BinaryBytes,
+				common.Percentage,
+			},
+			PrimaryUnit: "B",
+		},
+		ContainerNetworkIn: {
+			Label: "NETWORK IN",
+			QueryTemplates: []string{
+				// 컨테이너의 NETWORK IN(bps)
+				"sum(rate(container_network_receive_bytes_total{namespace=~\"%s\"}[3m]))",
 			},
 			QueryGenerators: QueryGenerators{
 				queryGenerator([]interface{}{"namespace"}, false),
 			},
 			UnitTypeKeys: []common.UnitTypeKey{
-				common.BinaryBytes,
-			},
-			PrimaryUnit: "B",
-		},
-		ContainerFileSystem: { // TODO
-			Label: "FILE SYSTEM",
-			QueryTemplates: []string{
-				// 노드의 파일 시스템 사용량(byte)
-				"sum(node_filesystem_size_bytes{mountpoint=\"/\",fstype!=\"rootfs\",instance=~\"%s\"}-node_filesystem_avail_bytes{mountpoint=\"/\",fstype!=\"rootfs\",instance=~\"%s\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance", "instance"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.BinaryBytes,
-			},
-			PrimaryUnit: "B",
-		},
-		ContainerNetworkIn: { // TODO
-			Label: "NETWORK IN",
-			QueryTemplates: []string{
-				// 노드의 NETWORK IN(bps)
-				"sum(rate(node_network_receive_bytes_total{instance=~\"%s\"}[3m]))",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance"}, false),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
 				common.DecimalBytesPerSec,
 			},
 			PrimaryUnit: "Bps",
 		},
-		ContainerNetworkOut: { // TODO
+		ContainerNetworkOut: {
 			Label: "NETWORK OUT",
 			QueryTemplates: []string{
-				// 노드의 NETWORK OUT(bps)
-				"sum(rate(node_network_receive_bytes_total{instance=~\"%s\"}[3m]))",
+				// 컨테이너의 NETWORK OUT(bps)
+				"sum(rate(container_network_transmit_bytes_total{namespace=~\"%s\"}[3m]))",
 			},
 			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"instance"}, false),
+				queryGenerator([]interface{}{"namespace"}, false),
 			},
 			UnitTypeKeys: []common.UnitTypeKey{
 				common.DecimalBytesPerSec,
 			},
 			PrimaryUnit: "Bps",
+		},
+		ContainerPodCount: {
+			Label: "POD COUNT",
+			QueryTemplates: []string{
+				// 컨테이너의 파드 수
+				"sum(kube_pod_info{namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Count,
+			},
+			PrimaryUnit: "",
 		},
 		NodeInfo: {
 			MetricKeys: []MetricKey{NodeCpu, NodeMemory, NodeFileSystem, NodeNetworkIn, NodeNetworkOut, NodePodCount},

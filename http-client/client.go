@@ -50,11 +50,13 @@ func main() {
 
 	// -- single 모니터링 하려는 메트릭 키의 목록
 	//var metricKeys = []string{"quota"}
+	var metricKeys = []string{"container_info"}
 	//var metricKeys = []string{"container_cpu"}
 	//var metricKeys = []string{"container_memory"}
 	//var metricKeys = []string{"container_file_system"}
 	//var metricKeys = []string{"container_network_in"}
 	//var metricKeys = []string{"container_network_out"}
+	//var metricKeys = []string{"container_pod_count"}
 	//var metricKeys = []string{"node_info"}
 	//var metricKeys = []string{"node_cpu"}
 	//var metricKeys = []string{"node_cpu_top"}
@@ -105,7 +107,7 @@ func main() {
 	//var metricKeys = []string{"range_network_packet_receive_transmit_drop"}
 	//var metricKeys = []string{"range_file_system"}
 	//var metricKeys = []string{"range_disk_io"}
-	var metricKeys = []string{"number_of_pipeline"}
+	//var metricKeys = []string{"number_of_pipeline"}
 	//var metricKeys = []string{"node_info"}
 
 	// --- mixed

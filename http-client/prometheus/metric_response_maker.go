@@ -30,6 +30,7 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, 
 	case // (1)
 		Quota,
 		NodeCpu, NodeMemory, NodeFileSystem,
+		ContainerCpu, ContainerMemory, ContainerFileSystem,
 		QuotaCpuRequest, QuotaCpuLimit, QuotaMemoryRequest,
 		QuotaMemoryLimit:
 		if len(resultSets) != 0 {
@@ -52,8 +53,7 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, 
 			}
 		}
 	case // (2)
-		ContainerCpu, ContainerMemory, ContainerFileSystem,
-		ContainerNetworkIn, ContainerNetworkOut,
+		ContainerNetworkIn, ContainerNetworkOut, ContainerPodCount,
 		NodeNetworkIn, NodeNetworkOut, NodePodCount:
 		var resultSet0, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[0]), 64)
 
@@ -139,6 +139,37 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, 
 			}
 		}
 	case // (6)
+		ContainerInfo:
+		values := make(map[string]interface{})
+		if len(resultSets) != 0 {
+			resultSet0 := resultSets[0].(map[string]interface{})
+			for key, value := range resultSet0 {
+				switch MetricKey(key) {
+				case
+					ContainerCpu, ContainerMemory, ContainerFileSystem:
+					label := fmt.Sprintf("%s", common.Get(value, "Label"))
+					usage := common.Get(value, "Usage")
+					percentage := common.Get(value, "Percentage")
+					unit := common.Get(value, "Unit")
+					values[label] = fmt.Sprintf("%s %s (%s%%)", usage, unit, percentage)
+				case
+					ContainerNetworkIn, ContainerNetworkOut:
+					label := fmt.Sprintf("%s", common.Get(value, "Label"))
+					usage := common.Get(value, "Usage")
+					unit := common.Get(value, "Unit")
+					values[label] = fmt.Sprintf("%s %s", usage, unit)
+				case
+					ContainerPodCount:
+					label := fmt.Sprintf("%s", common.Get(value, "Label"))
+					usage := common.Get(value, "Usage")
+					values[label] = fmt.Sprintf("%s", usage)
+				}
+			}
+			return MetricResponse{
+				Values: values,
+			}
+		}
+	case // (7)
 		QuotaObjectCountConfigmaps, QuotaObjectCountPods, QuotaObjectCountSecrets,
 		QuotaObjectCountReplicationControllers, QuotaObjectCountServices, QuotaObjectCountServicesLoadBalancers,
 		QuotaObjectCountServicesNodePorts, QuotaObjectCountResourceQuotas, QuotaObjectCountPersistentVolumeClaims:

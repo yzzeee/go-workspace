@@ -5,11 +5,13 @@ type MetricKey string
 
 const (
 	Quota                                  = MetricKey("quota")
+	ContainerInfo                          = MetricKey("container_info")
 	ContainerCpu                           = MetricKey("container_cpu")
 	ContainerMemory                        = MetricKey("container_memory")
 	ContainerFileSystem                    = MetricKey("container_file_system")
 	ContainerNetworkIn                     = MetricKey("container_network_in")
 	ContainerNetworkOut                    = MetricKey("container_network_out")
+	ContainerPodCount                      = MetricKey("container_pod_count")
 	NodeInfo                               = MetricKey("node_info")
 	NodeCpu                                = MetricKey("node_cpu")
 	NodeCpuTop                             = MetricKey("node_cpu_top")
