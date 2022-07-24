@@ -53,6 +53,7 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, 
 			}
 		}
 	case // (2)
+		ContainerDiskIOReads, ContainerDiskIOWrites,
 		ContainerNetworkIn, ContainerNetworkOut, ContainerPodCount,
 		NodeNetworkIn, NodeNetworkOut, NodePodCount,
 		NumberOfContainer:
@@ -154,7 +155,7 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, 
 					unit := common.Get(value, "Unit")
 					values[label] = fmt.Sprintf("%s %s (%s%%)", usage, unit, percentage)
 				case
-					ContainerNetworkIn, ContainerNetworkOut:
+					ContainerDiskIOReads, ContainerDiskIOWrites, ContainerNetworkIn, ContainerNetworkOut:
 					label := fmt.Sprintf("%s", common.Get(value, "Label"))
 					usage := common.Get(value, "Usage")
 					unit := common.Get(value, "Unit")

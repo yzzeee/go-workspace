@@ -8,6 +8,8 @@ const (
 	ContainerInfo                          = MetricKey("container_info")
 	ContainerCpu                           = MetricKey("container_cpu")
 	ContainerMemory                        = MetricKey("container_memory")
+	ContainerDiskIOReads                   = MetricKey("container_disk_io_reads")
+	ContainerDiskIOWrites                  = MetricKey("container_disk_io_writes")
 	ContainerFileSystem                    = MetricKey("container_file_system")
 	ContainerNetworkIn                     = MetricKey("container_network_in")
 	ContainerNetworkOut                    = MetricKey("container_network_out")

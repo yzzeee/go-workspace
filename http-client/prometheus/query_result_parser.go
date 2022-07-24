@@ -22,6 +22,7 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 	switch metricKey {
 	case // (1)
 		Quota, ContainerCpu, ContainerMemory,
+		ContainerDiskIOReads, ContainerDiskIOWrites,
 		ContainerFileSystem, ContainerNetworkIn, ContainerNetworkOut,
 		ContainerPodCount, NodeCpu, NodeMemory,
 		NumberOfContainer,

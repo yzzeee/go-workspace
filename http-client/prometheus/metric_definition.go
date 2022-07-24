@@ -46,7 +46,7 @@ var (
 			PrimaryUnit: "Core",
 		},
 		ContainerInfo: {
-			MetricKeys: []MetricKey{ContainerCpu, ContainerMemory, ContainerFileSystem, ContainerNetworkIn, ContainerNetworkOut, ContainerPodCount},
+			MetricKeys: []MetricKey{ContainerCpu, ContainerMemory, ContainerDiskIOReads, ContainerDiskIOWrites, ContainerFileSystem, ContainerNetworkIn, ContainerNetworkOut, ContainerPodCount},
 		},
 		ContainerCpu: {
 			Label: "CPU",
@@ -89,6 +89,34 @@ var (
 				common.BinaryBytes,
 				common.BinaryBytes,
 				common.Percentage,
+			},
+			PrimaryUnit: "B",
+		},
+		ContainerDiskIOReads: {
+			Label: "DISK IO READS",
+			QueryTemplates: []string{
+				// 컨테이너의 읽기 DISK IO
+				"sum(irate(container_fs_reads_bytes_total{device!=\"\", namespace=~\"%s\", pod=~\"%s\", instance=~\"%s\"}[3m]))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace", "pod", "instance"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+			},
+			PrimaryUnit: "B",
+		},
+		ContainerDiskIOWrites: {
+			Label: "DISK IO WRITES",
+			QueryTemplates: []string{
+				// 컨테이너의 쓰기 DISK IO
+				"sum(irate(container_fs_writes_bytes_total{device!=\"\", namespace=~\"%s\", pod=~\"%s\", instance=~\"%s\"}[3m]))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace", "pod", "instance"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
 			},
 			PrimaryUnit: "B",
 		},
@@ -171,7 +199,7 @@ var (
 			PrimaryUnit: "",
 		},
 		NodeInfo: {
-			MetricKeys: []MetricKey{NodeCpu, NodeMemory, NodeFileSystem, NodeNetworkIn, NodeNetworkOut, NodePodCount},
+			MetricKeys: []MetricKey{NodeCpu, NodeMemory, ContainerDiskIOReads, ContainerDiskIOWrites, NodeFileSystem, NodeNetworkIn, NodeNetworkOut, NodePodCount},
 		},
 		NodeCpu: {
 			Label: "CPU",
