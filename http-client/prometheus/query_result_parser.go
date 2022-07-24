@@ -24,6 +24,7 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 		Quota, ContainerCpu, ContainerMemory,
 		ContainerDiskIOReads, ContainerDiskIOWrites,
 		ContainerFileSystem, ContainerNetworkIn, ContainerNetworkOut,
+		ContainerNetworkPacketsReceive, ContainerNetworkPacketsTransmit,
 		ContainerPodCount, NodeCpu, NodeMemory,
 		NumberOfContainer,
 		NodeFileSystem, NodeNetworkIn, NodeNetworkOut,

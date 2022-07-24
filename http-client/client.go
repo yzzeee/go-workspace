@@ -53,11 +53,13 @@ func main() {
 	//var metricKeys = []string{"container_info"}
 	//var metricKeys = []string{"container_cpu"}
 	//var metricKeys = []string{"container_memory"}
-	var metricKeys = []string{"container_disk_io_reads"}
+	//var metricKeys = []string{"container_disk_io_reads"}
 	//var metricKeys = []string{"container_disk_io_writes"}
 	//var metricKeys = []string{"container_file_system"}
 	//var metricKeys = []string{"container_network_in"}
 	//var metricKeys = []string{"container_network_out"}
+	var metricKeys = []string{"container_network_packets_receive"}
+	//var metricKeys = []string{"container_network_packets_transmit"}
 	//var metricKeys = []string{"container_pod_count"}
 	//var metricKeys = []string{"number_of_container"}
 	//var metricKeys = []string{"node_info"}

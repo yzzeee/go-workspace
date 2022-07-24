@@ -46,7 +46,7 @@ var (
 			PrimaryUnit: "Core",
 		},
 		ContainerInfo: {
-			MetricKeys: []MetricKey{ContainerCpu, ContainerMemory, ContainerDiskIOReads, ContainerDiskIOWrites, ContainerFileSystem, ContainerNetworkIn, ContainerNetworkOut, ContainerPodCount},
+			MetricKeys: []MetricKey{ContainerCpu, ContainerMemory, ContainerDiskIOReads, ContainerDiskIOWrites, ContainerFileSystem, ContainerNetworkIn, ContainerNetworkOut, ContainerNetworkPacketsReceive, ContainerNetworkPacketsTransmit, ContainerPodCount},
 		},
 		ContainerCpu: {
 			Label: "CPU",
@@ -170,6 +170,34 @@ var (
 			},
 			PrimaryUnit: "Bps",
 		},
+		ContainerNetworkPacketsReceive: {
+			Label: "NETWORK PACKETS RECEIVE",
+			QueryTemplates: []string{
+				// 컨테이너의 수신 패킷
+				"sum(rate(container_network_receive_packets_total{instance=~\"%s\",namespace=~\"%s\",pod=~\"%s\"}[3m]))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"instance", "namespace", "pod"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Numeric,
+			},
+			PrimaryUnit: "",
+		},
+		ContainerNetworkPacketsTransmit: {
+			Label: "NETWORK PACKETS TRANSMIT",
+			QueryTemplates: []string{
+				// 컨테이너의 전송 패킷
+				"sum(rate(container_network_transmit_packets_total{instance=~\"%s\",namespace=~\"%s\",pod=~\"%s\"}[3m]))",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"instance", "namespace", "pod"}, false),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.Numeric,
+			},
+			PrimaryUnit: "",
+		},
 		ContainerPodCount: {
 			Label: "POD COUNT",
 			QueryTemplates: []string{
@@ -199,7 +227,7 @@ var (
 			PrimaryUnit: "",
 		},
 		NodeInfo: {
-			MetricKeys: []MetricKey{NodeCpu, NodeMemory, ContainerDiskIOReads, ContainerDiskIOWrites, NodeFileSystem, NodeNetworkIn, NodeNetworkOut, NodePodCount},
+			MetricKeys: []MetricKey{NodeCpu, NodeMemory, ContainerDiskIOReads, ContainerDiskIOWrites, NodeFileSystem, NodeNetworkIn, NodeNetworkOut, ContainerNetworkPacketsReceive, ContainerNetworkPacketsTransmit, NodePodCount},
 		},
 		NodeCpu: {
 			Label: "CPU",
