@@ -15,6 +15,8 @@ const (
 	ContainerNetworkOut                    = MetricKey("container_network_out")
 	ContainerNetworkPacketsReceive         = MetricKey("container_network_packets_receive")
 	ContainerNetworkPacketsTransmit        = MetricKey("container_network_packets_transmit")
+	ContainerNetworkPacketsReceiveDrop     = MetricKey("container_network_packets_receive_drop")
+	ContainerNetworkPacketsTransmitDrop    = MetricKey("container_network_packets_transmit_drop")
 	ContainerPodCount                      = MetricKey("container_pod_count")
 	NodeInfo                               = MetricKey("node_info")
 	NodeCpu                                = MetricKey("node_cpu")

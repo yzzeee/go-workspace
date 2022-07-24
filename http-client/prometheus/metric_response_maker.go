@@ -56,6 +56,7 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, 
 		ContainerDiskIOReads, ContainerDiskIOWrites,
 		ContainerNetworkIn, ContainerNetworkOut,
 		ContainerNetworkPacketsReceive, ContainerNetworkPacketsTransmit,
+		ContainerNetworkPacketsReceiveDrop, ContainerNetworkPacketsTransmitDrop,
 		ContainerPodCount,
 		NodeNetworkIn, NodeNetworkOut, NodePodCount,
 		NumberOfContainer:
