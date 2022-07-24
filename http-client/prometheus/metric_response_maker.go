@@ -54,7 +54,8 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey, 
 		}
 	case // (2)
 		ContainerNetworkIn, ContainerNetworkOut, ContainerPodCount,
-		NodeNetworkIn, NodeNetworkOut, NodePodCount:
+		NodeNetworkIn, NodeNetworkOut, NodePodCount,
+		NumberOfContainer:
 		var resultSet0, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[0]), 64)
 
 		if unitTypeKeys != nil && unitTypeKeys[0] != "" {

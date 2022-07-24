@@ -34,6 +34,7 @@ const (
 	NodeNetworkOutTop5Projects             = MetricKey("node_network_out_top5_projects")
 	NodeNetworkOutTop5Pods                 = MetricKey("node_network_out_top5_pods")
 	NodePodCount                           = MetricKey("node_pod_count")
+	NumberOfContainer                      = MetricKey("number_of_container")
 	NodePodCountTop                        = MetricKey("node_pod_count_top")
 	NodePodCountTop5Projects               = MetricKey("node_pod_count_top5_projects")
 	QuotaCpuRequest                        = MetricKey("quota_cpu_request")

@@ -24,6 +24,7 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 		Quota, ContainerCpu, ContainerMemory,
 		ContainerFileSystem, ContainerNetworkIn, ContainerNetworkOut,
 		ContainerPodCount, NodeCpu, NodeMemory,
+		NumberOfContainer,
 		NodeFileSystem, NodeNetworkIn, NodeNetworkOut,
 		NodePodCount, QuotaCpuRequest, QuotaCpuLimit,
 		QuotaMemoryRequest, QuotaMemoryLimit, QuotaObjectCountConfigmaps,
