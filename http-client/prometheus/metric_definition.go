@@ -230,10 +230,10 @@ var (
 			Label: "POD COUNT",
 			QueryTemplates: []string{
 				// 컨테이너의 파드 수
-				"sum(kube_pod_container_info{pod=~\"%s\"})",
+				"sum(kube_pod_info{namespace=~\"%s\"})",
 			},
 			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"pod"}, false),
+				queryGenerator([]interface{}{"namespace"}, false),
 			},
 			UnitTypeKeys: []common.UnitTypeKey{
 				common.Count,
