@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/Terry-Mao/goconf"
+	"go-practice/http-client/kubernetes"
 )
 
 var conf = goconf.New()
@@ -24,8 +25,26 @@ func parseClientConfig() {
 	if err != nil {
 		panic(err)
 	}
+
+	ClientConfig.KubeConfigPath, err = configs.String("kube_config_path")
+	if err != nil {
+		panic(err)
+	}
+	kubernetes.KubeConfigPath = ClientConfig.KubeConfigPath
+
+	ClientConfig.KubeIgnoreTLSVerification, err = configs.Bool("kube_ignore_tls_verification")
+	if err != nil {
+		panic(err)
+	}
+	kubernetes.IgnoreTLSVerification = ClientConfig.KubeIgnoreTLSVerification
+
+	err = kubernetes.InitConfig()
+	if err != nil {
+		panic(err)
+	}
 }
 
+// Init 환경 설정을 초기화 한다.
 func Init() {
 	err = conf.Parse(configLocation)
 	if err != nil {

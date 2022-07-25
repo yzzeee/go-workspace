@@ -3,34 +3,61 @@ package prometheus
 import (
 	"encoding/json"
 	"fmt"
-	"go-practice/common"
 	"strconv"
+
+	"go-practice/common"
 )
 
 // ParseQueryResult responseBytes 의 에서 필요한 값을 파싱하고 결과값과,최대값을 반환하는 함수
-/* (번호) | responseBytes 포멧(파싱 전) | 결과값 포멧(파싱 후)
- * (1) | { } | { }
- * (2) | { } | { }
- * (3) | { } | { }
+/* (번호) responseBytes(파싱 전) => 반환값 형태(파싱 후)
+ * (1) {"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1657560872.452,"11.754666666666427"]}]}}
+ *       => 11.754666666666427
+ * (2) {"status":"success","data":{"resultType":"vector","result":[{"metric":{"instance":"worker1.ocp4.inno.com"},"value":[1657562191.538,"3.313939393939407"]}
+ *  															  ,{"metric":{"instance":"worker2.ocp4.inno.com"},"value":[1657562191.538,"3.1159393939394797"]}]}}
+ *     => map[0:map[id:worker1.ocp4.inno.com order:0 timestamp:1.657562191538e+09 value:3.313939393939407] 1:map[id:worker2.ocp4.inno.com order:1 timestamp:1.657562191538e+09 value:3.1159393939394797]]
+ * (3) {"status":"success","data":{"resultType":"matrix","result":[{"metric":{},"values":[[1657561614,"4.194350475285014"],[1657561634,"4.313346351838768"]]}]}}
+ *       => [map[timestamp:1.657561614e+09 value:4.194350475285014] map[timestamp:1.657561634e+09 value:4.313346351838768]]
  */
-func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []byte) (interface{}, float64) {
+func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []byte, isRange bool) (interface{}, float64) {
 	var result1 interface{}                 // (1)
-	var result2 = make(map[int]interface{}) // (2)
-	var result3 []interface{}               // (3)
+	var result2 []interface{}               // (2)
+	var result3 = make(map[int]interface{}) // (3)
 	var maxValue float64
 	var response = make(map[string]interface{})
 	switch metricKey {
-	case // (1)
-		ContainerCpu, ContainerFileSystem, ContainerMemory, ContainerNetworkIn, ContainerNetworkOut,
-		NodeCpu, NodeFileSystem, NodeMemory, NodeNetworkIn, NodeNetworkOut,
-		NumberOfDeployment, NumberOfIngress, NumberOfPod, NumberOfNamespace, NumberOfService,
-		NumberOfStatefulSet, NumberOfVolume, QuotaCpuLimit, QuotaCpuRequest, QuotaMemoryLimit,
-		QuotaMemoryRequest:
-		response = make(map[string]interface{})
-		_ = json.Unmarshal(responseBytes, &response)
-		for _, ele := range response["data"].(map[string]interface{})["result"].([]interface{}) {
-			result1 = common.Get(ele, "value").([]interface{})[1]
-			maxValue, _ = strconv.ParseFloat(fmt.Sprintf("%s", result1), 64)
+	case
+		ContainerCpu, ContainerDiskIOReads, ContainerDiskIOWrites, ContainerFileSystem, ContainerMemory, ContainerNetworkIn, ContainerNetworkIO,
+		ContainerNetworkOut, ContainerNetworkPacket, ContainerNetworkPacketDrop, NodeCpu, NodeFileSystem, NodeCpuLoadAverage, NodeDiskIO,
+		NodeMemory, NodeNetworkIn, NodeNetworkOut, NodeNetworkIO, NodeNetworkPacket, NodeNetworkPacketDrop,
+		NumberOfContainer, NumberOfDeployment, NumberOfIngress, NumberOfPod, NumberOfNamespace, NumberOfService,
+		NumberOfStatefulSet, NumberOfVolume, CustomQuotaCpuLimit, CustomQuotaCpuRequest, CustomQuotaMemoryLimit,
+		CustomQuotaMemoryRequest, CustomNodeCpu, CustomNodeFileSystem, CustomNodeMemory:
+		if !isRange { // (1)
+			response = make(map[string]interface{})
+			_ = json.Unmarshal(responseBytes, &response)
+			for _, ele := range response["data"].(map[string]interface{})["result"].([]interface{}) {
+				result1 = common.Get(ele, "value").([]interface{})[1]
+				maxValue, _ = strconv.ParseFloat(fmt.Sprintf("%s", result1), 64)
+			}
+		} else { // (2)
+			_ = json.Unmarshal(responseBytes, &response)
+			fmt.Println(len(common.Get(response, "data.result").([]interface{})))
+			if len(common.Get(response, "data.result").([]interface{})) != 0 {
+				for _, ele := range response["data"].(map[string]interface{})["result"].([]interface{})[0].(map[string]interface{})["values"].([]interface{}) {
+					temp := make(map[string]interface{})
+					temp["timestamp"] = common.Get(ele, "0")
+					temp["value"] = common.Get(ele, "1")
+					result2 = append(result2, temp)
+
+					// 다중 값 중 최대값 저장 후 반환
+					if isPrimaryUnit {
+						float, _ := strconv.ParseFloat(fmt.Sprintf("%s", temp["value"]), 64)
+						if maxValue < float {
+							maxValue = float
+						}
+					}
+				}
+			}
 		}
 	case // (2)
 		TopNodeCpuByInstance, TopNodeFileSystemByInstance, TopNodeMemoryByInstance, TopNodeNetworkInByInstance, TopNodeNetworkOutByInstance,
@@ -61,7 +88,7 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 			temp["timestamp"] = common.Get(ele, "value").([]interface{})[0] // value 의 첫 번째 원소는 timestamp
 			temp["value"] = common.Get(ele, "value").([]interface{})[1]     // value 의 두 번째 원소는 메트릭 값
 			temp["order"] = i                                               // 순서 보장 안되므로 정렬을 위한 인덱스를 넣어줌
-			result2[i] = temp
+			result3[i] = temp
 
 			// 다중 값 중 최대값 저장 후 반환
 			if isPrimaryUnit {
@@ -71,37 +98,14 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 				}
 			}
 		}
-	case // (3)
-		RangeContainerCpu, RangeContainerMemory, RangeNodeNetworkIO, RangeContainerNetworkIO, RangeNodeNetworkPacket,
-		RangeContainerNetworkPacket, RangeFileSystem, RangeDiskIO, RangeNetworkBandwidth, RangeNetworkPacketReceiveTransmit,
-		RangeNetworkPacketReceiveTransmitDrop, RangeNodeCpu, RangeNodeCpuLoadAverage, RangeNodeMemory:
-		_ = json.Unmarshal(responseBytes, &response)
-		fmt.Println(len(common.Get(response, "data.result").([]interface{})))
-		if len(common.Get(response, "data.result").([]interface{})) != 0 {
-			for _, ele := range response["data"].(map[string]interface{})["result"].([]interface{})[0].(map[string]interface{})["values"].([]interface{}) {
-				temp := make(map[string]interface{})
-				temp["timestamp"] = common.Get(ele, "0")
-				temp["value"] = common.Get(ele, "1")
-				result3 = append(result3, temp)
-
-				// 다중 값 중 최대값 저장 후 반환
-				if isPrimaryUnit {
-					float, _ := strconv.ParseFloat(fmt.Sprintf("%s", temp["value"]), 64)
-					if maxValue < float {
-						maxValue = float
-					}
-				}
-			}
-		}
 	}
-
 	if result1 != nil {
 		return result1, maxValue
 	}
-	if len(result2) != 0 {
+	if result2 != nil {
 		return result2, maxValue
 	}
-	if result3 != nil {
+	if len(result3) != 0 {
 		return result3, maxValue
 	}
 	return nil, 0
