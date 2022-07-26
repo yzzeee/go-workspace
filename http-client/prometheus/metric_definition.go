@@ -7,16 +7,36 @@ import (
 // QueryGenerators 쿼리 템플릿과 쿼리 파라미터를 인자로 받아 쿼리를 반환하는 함수 목록 타입
 type QueryGenerators []func(queryTemplate string, queryParams map[string]interface{}) (string, string)
 
+// QueryTemplateParsers 쿼리 템플릿과 쿼리 파라미터를 인자로 받아 쿼리를 반환하는 함수 목록 타입
+type QueryTemplateParsers []func(queryTemplate string, queryParams map[string]interface{}) (string, string)
+
 // MetricDefinition 메트릭 정의 구조체
 type MetricDefinition struct {
-	Label           string               // 메트릭의 라벨
-	SubLabels       []string             // 쿼리 템플릿의 라벨(미필수)
-	QueryTemplates  []string             // 쿼리 템플릿
-	QueryGenerators QueryGenerators      // 쿼리 템플릿에 조건절 추가하여 쿼리를 반환하는 함수 목록(쿼리 템플릿과 맵핑)
-	UnitTypeKeys    []common.UnitTypeKey // 쿼리 결과값의 단위 타입의 키 목록(쿼리 템플릿과 맵핑)
-	PrimaryUnit     string               // 쿼리 결과값의 단위 중 주단위
+	Label           string                          // 메트릭의 라벨
+	SubLabels       []string                        // 쿼리 템플릿의 라벨(미필수)
+	QueryInfos      map[PrometheusVersion]QueryInfo // 버전별 쿼리 모음
+	QueryTemplates  []string                        // 쿼리 템플릿
+	QueryGenerators QueryGenerators                 // 쿼리 템플릿에 조건절 추가하여 쿼리를 반환하는 함수 목록(쿼리 템플릿과 맵핑)
+	UnitTypeKeys    []common.UnitTypeKey            // 쿼리 결과값의 단위 타입의 키 목록(쿼리 템플릿과 맵핑)
+	PrimaryUnit     string                          // 쿼리 결과값의 단위 중 주단위
 
 	MetricKeys []MetricKey // 다른 메트릭 정의를 활용하는 메트릭(다른 메트릭 활용 시 해당 값만 작성)
+}
+
+// MetricKey 메트릭 키
+type PrometheusVersion string
+
+const (
+	v2_20_0 = PrometheusVersion("2.20.0")
+	v2_26_0 = PrometheusVersion("2.26.0")
+	v2_29_0 = PrometheusVersion("2.29.0")
+	v2_32_0 = PrometheusVersion("2.32.0")
+)
+
+type QueryInfo struct {
+	ReferenceVersion     PrometheusVersion
+	QueryTemplates       []string
+	QueryTemplateParsers QueryTemplateParsers // 쿼리 템플릿에 조건절 추가하여 쿼리를 반환하는 함수 목록(쿼리 템플릿과 맵핑)
 }
 
 // MetricDefinitions 메트릭 키에 따른 메트릭 정의 상수
@@ -24,6 +44,19 @@ var (
 	MetricDefinitions = map[MetricKey]MetricDefinition{
 		ContainerCpu: {
 			Label: "CPU USAGE",
+			QueryInfos: map[PrometheusVersion]QueryInfo{
+				v2_20_0: {
+					QueryTemplates: []string{
+						"sum(rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\",namespace=~\"%s\"}[3m]))",
+					},
+					QueryTemplateParsers: QueryTemplateParsers{
+						queryTemplateParser([]interface{}{"namespace"}),
+					},
+				},
+				v2_26_0: {
+					ReferenceVersion: v2_20_0,
+				},
+			},
 			QueryTemplates: []string{
 				// 컨테이너의 CPU Core 사용량(Core)
 				"sum(rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\",namespace=~\"%s\"}[3m]))",

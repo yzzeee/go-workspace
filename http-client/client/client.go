@@ -150,7 +150,7 @@ func main() {
 
 func getQueryResult(metricKey prometheus.MetricKey, bodyParams map[string]interface{}) map[string]interface{} {
 	var result = make(map[string]interface{})
-	//use http
+
 	// 클라이언트 생성(TLS insecure 옵션, 인증 정보, 헤더 설정)
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -166,6 +166,13 @@ func getQueryResult(metricKey prometheus.MetricKey, bodyParams map[string]interf
 	if subLabels == nil {
 		subLabels = []string{label}
 	}
+
+	//var prometheusVersion = "2.2.0"
+	//
+	//queryInfos := metricDefinition.QueryInfos
+
+	// 프로메테우스 버전 정보에 따라서 쿼리 템플릿을 가져오는 로직
+
 	queryTemplates := metricDefinition.QueryTemplates
 	unitTypeKeys := metricDefinition.UnitTypeKeys
 	primaryUnit := metricDefinition.PrimaryUnit

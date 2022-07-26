@@ -10,14 +10,14 @@ import (
 
 // ParseQueryResult responseBytes 의 에서 필요한 값을 파싱하고 결과값과,최대값을 반환하는 함수
 /* (번호) responseBytes(파싱 전) => 반환값 형태(파싱 후)
- * (1) {"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1657560872.452,"11.754666666666427"]}]}}
- *       => 11.754666666666427
- * (2) {"status":"success","data":{"resultType":"vector","result":[{"metric":{"instance":"worker1.ocp4.inno.com"},"value":[1657562191.538,"3.313939393939407"]}
- *  															  ,{"metric":{"instance":"worker2.ocp4.inno.com"},"value":[1657562191.538,"3.1159393939394797"]}]}}
- *     => map[0:map[id:worker1.ocp4.inno.com order:0 timestamp:1.657562191538e+09 value:3.313939393939407] 1:map[id:worker2.ocp4.inno.com order:1 timestamp:1.657562191538e+09 value:3.1159393939394797]]
- * (3) {"status":"success","data":{"resultType":"matrix","result":[{"metric":{},"values":[[1657561614,"4.194350475285014"],[1657561634,"4.313346351838768"]]}]}}
- *       => [map[timestamp:1.657561614e+09 value:4.194350475285014] map[timestamp:1.657561634e+09 value:4.313346351838768]]
- */
+* (1) {"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1657560872.452,"11.754666666666427"]}]}}
+*       => 11.754666666666427
+* (2) {"status":"success","data":{"resultType":"vector","result":[{"metric":{"instance":"worker1.ocp4.inno.com"},"value":[1657562191.538,"3.313939393939407"]},
+                                                                  {"metric":{"instance":"worker2.ocp4.inno.com"},"value":[1657562191.538,"3.1159393939394797"]}]}}
+*     => map[0:map[id:worker1.ocp4.inno.com order:0 timestamp:1.657562191538e+09 value:3.313939393939407] 1:map[id:worker2.ocp4.inno.com order:1 timestamp:1.657562191538e+09 value:3.1159393939394797]]
+* (3) {"status":"success","data":{"resultType":"matrix","result":[{"metric":{},"values":[[1657561614,"4.194350475285014"],[1657561634,"4.313346351838768"]]}]}}
+*       => [map[timestamp:1.657561614e+09 value:4.194350475285014] map[timestamp:1.657561634e+09 value:4.313346351838768]]
+*/
 func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []byte, isRange bool) (interface{}, float64) {
 	var result1 interface{}                 // (1)
 	var result2 []interface{}               // (2)
@@ -48,7 +48,6 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 			}
 		} else { // (2)
 			_ = json.Unmarshal(responseBytes, &response)
-			fmt.Println(len(common.Get(response, "data.result").([]interface{})))
 			if len(common.Get(response, "data.result").([]interface{})) != 0 {
 				for _, ele := range response["data"].(map[string]interface{})["result"].([]interface{})[0].(map[string]interface{})["values"].([]interface{}) {
 					temp := make(map[string]interface{})
