@@ -26,12 +26,17 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 	var response = make(map[string]interface{})
 	switch metricKey {
 	case
-		ContainerCpu, ContainerDiskIOReads, ContainerDiskIOWrites, ContainerFileSystem, ContainerMemory, ContainerNetworkIn, ContainerNetworkIO,
-		ContainerNetworkOut, ContainerNetworkPacket, ContainerNetworkPacketDrop, NodeCpu, NodeFileSystem, NodeCpuLoadAverage, NodeDiskIO,
-		NodeMemory, NodeNetworkIn, NodeNetworkOut, NodeNetworkIO, NodeNetworkPacket, NodeNetworkPacketDrop,
-		NumberOfContainer, NumberOfDeployment, NumberOfIngress, NumberOfPod, NumberOfNamespace, NumberOfService,
-		NumberOfStatefulSet, NumberOfVolume, CustomQuotaCpuLimit, CustomQuotaCpuRequest, CustomQuotaMemoryLimit,
-		CustomQuotaMemoryRequest, CustomNodeCpu, CustomNodeFileSystem, CustomNodeMemory:
+		ContainerCpu, ContainerDiskIOReads, ContainerDiskIOWrites, ContainerFileSystem, ContainerMemory,
+		ContainerNetworkIn, ContainerNetworkIO, ContainerNetworkOut, ContainerNetworkPacket, ContainerNetworkPacketDrop,
+		CustomNodeCpu, CustomNodeFileSystem, CustomNodeMemory, CustomQuotaCpuLimit, CustomQuotaCpuRequest,
+		CustomQuotaMemoryLimit, CustomQuotaMemoryRequest, NodeCpu, NodeCpuLoadAverage, NodeDiskIO,
+		NodeFileSystem, NodeMemory, NodeNetworkIn, NodeNetworkIO, NodeNetworkOut,
+		NodeNetworkPacket, NodeNetworkPacketDrop, NumberOfContainer, NumberOfDeployment, NumberOfIngress,
+		NumberOfPod, NumberOfNamespace, NumberOfService, NumberOfStatefulSet, NumberOfVolume,
+		QuotaCpuLimit, QuotaCpuRequest, QuotaMemoryLimit, QuotaMemoryRequest, QuotaObjectCountConfigmaps,
+		QuotaObjectCountPods, QuotaObjectCountSecrets, QuotaObjectCountReplicationControllers,
+		QuotaObjectCountServices, QuotaObjectCountServicesLoadBalancers, QuotaObjectCountServicesNodePorts,
+		QuotaObjectCountResourceQuotas, QuotaObjectCountPersistentVolumeClaims:
 		if !isRange { // (1)
 			response = make(map[string]interface{})
 			_ = json.Unmarshal(responseBytes, &response)
@@ -61,10 +66,12 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 				}
 			}
 		}
-	case // (2)
-		TopNodeCpuByInstance, TopNodeFileSystemByInstance, TopNodeMemoryByInstance, TopNodeNetworkInByInstance, TopNodeNetworkOutByInstance,
-		TopCountPodByNode, Top5ContainerCpuByNamespace, Top5ContainerCpuByPod, Top5ContainerFileSystemByNamespace, Top5ContainerFileSystemByPod,
-		Top5ContainerMemoryByNamespace, Top5ContainerMemoryByPod, Top5ContainerNetworkInByNamespace, Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByNamespace,
+	case // (3)
+		TopNodeCpuByInstance, TopNodeFileSystemByInstance, TopNodeMemoryByInstance,
+		TopNodeNetworkInByInstance, TopNodeNetworkOutByInstance, TopCountPodByNode,
+		Top5ContainerCpuByNamespace, Top5ContainerCpuByPod, Top5ContainerFileSystemByNamespace,
+		Top5ContainerFileSystemByPod, Top5ContainerMemoryByNamespace, Top5ContainerMemoryByPod,
+		Top5ContainerNetworkInByNamespace, Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByNamespace,
 		Top5ContainerNetworkOutByPod, Top5CountPodByNamespace:
 		response = make(map[string]interface{})
 		_ = json.Unmarshal(responseBytes, &response)
@@ -77,14 +84,17 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 				TopCountPodByNode:
 				temp["id"] = common.Get(ele, "metric.node")
 			case
-				TopNodeCpuByInstance, TopNodeMemoryByInstance, TopNodeFileSystemByInstance, TopNodeNetworkInByInstance, TopNodeNetworkOutByInstance:
+				TopNodeCpuByInstance, TopNodeMemoryByInstance, TopNodeFileSystemByInstance,
+				TopNodeNetworkInByInstance, TopNodeNetworkOutByInstance:
 				temp["id"] = common.Get(ele, "metric.instance")
 			case
-				Top5ContainerCpuByNamespace, Top5ContainerFileSystemByNamespace, Top5ContainerMemoryByNamespace, Top5ContainerNetworkInByNamespace, Top5ContainerNetworkOutByNamespace,
+				Top5ContainerCpuByNamespace, Top5ContainerFileSystemByNamespace, Top5ContainerMemoryByNamespace,
+				Top5ContainerNetworkInByNamespace, Top5ContainerNetworkOutByNamespace,
 				Top5CountPodByNamespace:
 				temp["id"] = common.Get(ele, "metric.namespace")
 			case
-				Top5ContainerCpuByPod, Top5ContainerFileSystemByPod, Top5ContainerMemoryByPod, Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByPod:
+				Top5ContainerCpuByPod, Top5ContainerFileSystemByPod, Top5ContainerMemoryByPod,
+				Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByPod:
 				temp["id"] = common.Get(ele, "metric.pod")
 			}
 			temp["timestamp"] = common.Get(ele, "value").([]interface{})[0] // value 의 첫 번째 원소는 timestamp

@@ -27,9 +27,12 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 		ContainerCpu, ContainerDiskIOReads, ContainerDiskIOWrites, ContainerFileSystem, ContainerMemory,
 		ContainerNetworkIn, ContainerNetworkIO, ContainerNetworkOut, ContainerNetworkPacket, ContainerNetworkPacketDrop,
 		NodeCpu, NodeCpuLoadAverage, NodeDiskIO, NodeFileSystem, NodeMemory,
-		NodeNetworkIO, NodeNetworkIn, NodeNetworkOut, NodeNetworkPacket, NodeNetworkPacketDrop,
-		NumberOfContainer, NumberOfDeployment, NumberOfIngress, NumberOfPipeline, NumberOfPod, NumberOfNamespace, NumberOfService,
-		NumberOfStatefulSet, NumberOfVolume:
+		NodeNetworkIn, NodeNetworkIO, NodeNetworkOut, NodeNetworkPacket, NodeNetworkPacketDrop,
+		NumberOfContainer, NumberOfDeployment, NumberOfIngress, NumberOfPod, NumberOfNamespace,
+		NumberOfService, NumberOfStatefulSet, NumberOfVolume, QuotaCpuLimit, QuotaCpuRequest,
+		QuotaMemoryLimit, QuotaMemoryRequest, QuotaObjectCountConfigmaps, QuotaObjectCountPods, QuotaObjectCountSecrets,
+		QuotaObjectCountReplicationControllers, QuotaObjectCountServices, QuotaObjectCountServicesLoadBalancers,
+		QuotaObjectCountServicesNodePorts, QuotaObjectCountResourceQuotas, QuotaObjectCountPersistentVolumeClaims:
 		if !isRange {
 			var resultSet0, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[0]), 64)
 

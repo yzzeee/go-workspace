@@ -29,7 +29,6 @@ func main() {
 	//now := time.Date(2022, 6, 27, 10, 15, 30, 0, time.Local)
 
 	bodyParams := map[string]interface{}{
-		"metricKeys": []string{"container_cpu"},
 		//"metricKeys": []string{"container_cpu"},
 		//"metricKeys": []string{"container_disk_io_reads"},
 		//"metricKeys": []string{"container_disk_io_writes"},
@@ -88,7 +87,7 @@ func main() {
 		//"metricKeys": []string{"quota_memory_limit"},
 		//"metricKeys": []string{"quota_memory_request"},
 		//"metricKeys": []string{"quota_object_count_configmaps"},
-		//"metricKeys": []string{"quota_object_count_pods"},
+		"metricKeys": []string{"quota_object_count_pods"},
 		//"metricKeys": []string{"quota_object_count_secrets"},
 		//"metricKeys": []string{"quota_object_count_replication_controllers"},
 		//"metricKeys": []string{"quota_object_count_services"},
@@ -102,7 +101,7 @@ func main() {
 		//"step": "120",
 		//"node": "master3.ocp4.inno.com|worker2.ocp4.inno.com",
 		//"instance": "master3.ocp4.inno.com|worker2.ocp4.inno.com",
-		"namespace": "admin-workspace",
+		//"namespace": ".*",
 	}
 
 	var result = make(map[string]interface{})
