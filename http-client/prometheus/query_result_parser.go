@@ -35,9 +35,11 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 		if !isRange { // (1)
 			response = make(map[string]interface{})
 			_ = json.Unmarshal(responseBytes, &response)
-			for _, ele := range response["data"].(map[string]interface{})["result"].([]interface{}) {
-				result1 = common.Get(ele, "value").([]interface{})[1]
-				maxValue, _ = strconv.ParseFloat(fmt.Sprintf("%s", result1), 64)
+			if response["data"] != nil {
+				for _, ele := range response["data"].(map[string]interface{})["result"].([]interface{}) {
+					result1 = common.Get(ele, "value").([]interface{})[1]
+					maxValue, _ = strconv.ParseFloat(fmt.Sprintf("%s", result1), 64)
+				}
 			}
 		} else { // (2)
 			_ = json.Unmarshal(responseBytes, &response)

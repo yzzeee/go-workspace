@@ -102,7 +102,7 @@ func main() {
 		//"step": "120",
 		//"node": "master3.ocp4.inno.com|worker2.ocp4.inno.com",
 		//"instance": "master3.ocp4.inno.com|worker2.ocp4.inno.com",
-		//"namespace": "admin-workspace",
+		"namespace": "admin-workspace",
 	}
 
 	var result = make(map[string]interface{})
@@ -206,7 +206,7 @@ func getQueryResult(metricKey prometheus.MetricKey, bodyParams map[string]interf
 		request.Header.Add("Content-Type", "application/json; charset=UTF-8")
 		request.Header.Add("Access-Control-Allow-Origin", "*")
 		request.Header.Add("Access-Control-Allow-Methods", "*")
-		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", config.ClientConfig.PrometheusRequestURL))
+		request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", config.ClientConfig.PrometheusToken))
 
 		// 응답 요청
 		response, err := client.Do(request)
