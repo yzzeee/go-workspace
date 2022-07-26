@@ -11,7 +11,10 @@ func queryGenerator(paramKeys []interface{}) func(string, map[string]interface{}
 		var rangeParams string
 		for i, paramKey := range paramKeys {
 			param := bodyParams[paramKey.(string)]
-			if param == "" || params == nil {
+			if param == nil {
+				param = ".*"
+			}
+			if param == "" {
 				param = ""
 			}
 			params[i] = param
