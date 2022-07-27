@@ -10,14 +10,14 @@ import (
 
 // ParseQueryResult responseBytes 의 에서 필요한 값을 파싱하고 결과값과,최대값을 반환하는 함수
 /* (번호) responseBytes(파싱 전) => 반환값 형태(파싱 후)
-* (1) {"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1657560872.452,"11.754666666666427"]}]}}
-*       => 11.754666666666427
-* (2) {"status":"success","data":{"resultType":"vector","result":[{"metric":{"instance":"worker1.ocp4.inno.com"},"value":[1657562191.538,"3.313939393939407"]},
-                                                                  {"metric":{"instance":"worker2.ocp4.inno.com"},"value":[1657562191.538,"3.1159393939394797"]}]}}
-*     => map[0:map[id:worker1.ocp4.inno.com order:0 timestamp:1.657562191538e+09 value:3.313939393939407] 1:map[id:worker2.ocp4.inno.com order:1 timestamp:1.657562191538e+09 value:3.1159393939394797]]
-* (3) {"status":"success","data":{"resultType":"matrix","result":[{"metric":{},"values":[[1657561614,"4.194350475285014"],[1657561634,"4.313346351838768"]]}]}}
-*       => [map[timestamp:1.657561614e+09 value:4.194350475285014] map[timestamp:1.657561634e+09 value:4.313346351838768]]
-*/
+ * (1) {"status":"success","data":{"resultType":"vector","result":[{"metric":{},"value":[1657560872.452,"11.754666666666427"]}]}}
+ *       => 11.754666666666427
+ * (2) {"status":"success","data":{"resultType":"vector","result":[{"metric":{"instance":"worker1.ocp4.inno.com"},"value":[1657562191.538,"3.313939393939407"]}
+ *  															  ,{"metric":{"instance":"worker2.ocp4.inno.com"},"value":[1657562191.538,"3.1159393939394797"]}]}}
+ *     => map[0:map[id:worker1.ocp4.inno.com order:0 timestamp:1.657562191538e+09 value:3.313939393939407] 1:map[id:worker2.ocp4.inno.com order:1 timestamp:1.657562191538e+09 value:3.1159393939394797]]
+ * (3) {"status":"success","data":{"resultType":"matrix","result":[{"metric":{},"values":[[1657561614,"4.194350475285014"],[1657561634,"4.313346351838768"]]}]}}
+ *       => [map[timestamp:1.657561614e+09 value:4.194350475285014] map[timestamp:1.657561634e+09 value:4.313346351838768]]
+ */
 func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []byte, isRange bool) (interface{}, float64) {
 	var result1 interface{}                 // (1)
 	var result2 []interface{}               // (2)
@@ -26,17 +26,21 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 	var response = make(map[string]interface{})
 	switch metricKey {
 	case
-		ContainerCpu, ContainerDiskIOReads, ContainerDiskIOWrites, ContainerFileSystem, ContainerMemory,
+		ContainerCpu, ContainerDiskIORead, ContainerDiskIOWrite, ContainerFileSystem, ContainerMemory,
 		ContainerNetworkIn, ContainerNetworkIO, ContainerNetworkOut, ContainerNetworkPacket, ContainerNetworkPacketDrop,
-		CustomNodeCpu, CustomNodeFileSystem, CustomNodeMemory, CustomQuotaCpuLimit, CustomQuotaCpuRequest,
-		CustomQuotaMemoryLimit, CustomQuotaMemoryRequest, NodeCpu, NodeCpuLoadAverage, NodeDiskIO,
+		CustomNodeCpu, CustomNodeFileSystem, CustomNodeMemory, CustomQuotaLimitCpu, CustomQuotaLimitMemory,
+		CustomQuotaRequestCpu, CustomQuotaRequestMemory, NodeCpu, NodeCpuLoadAverage, NodeDiskIO,
 		NodeFileSystem, NodeMemory, NodeNetworkIn, NodeNetworkIO, NodeNetworkOut,
 		NodeNetworkPacket, NodeNetworkPacketDrop, NumberOfContainer, NumberOfDeployment, NumberOfIngress,
-		NumberOfPod, NumberOfNamespace, NumberOfService, NumberOfStatefulSet, NumberOfVolume,
-		QuotaCpuLimit, QuotaCpuRequest, QuotaMemoryLimit, QuotaMemoryRequest, QuotaObjectCountConfigmaps,
-		QuotaObjectCountPods, QuotaObjectCountSecrets, QuotaObjectCountReplicationControllers,
-		QuotaObjectCountServices, QuotaObjectCountServicesLoadBalancers, QuotaObjectCountServicesNodePorts,
-		QuotaObjectCountResourceQuotas, QuotaObjectCountPersistentVolumeClaims:
+		NumberOfNamespace, NumberOfPod, NumberOfService, NumberOfStatefulSet, NumberOfVolume,
+		QuotaCountConfigMapHard, QuotaCountConfigMapUsed, QuotaCountPersistentVolumeClaimHard,
+		QuotaCountPersistentVolumeClaimUsed, QuotaCountPodHard, QuotaCountPodUsed,
+		QuotaCountReplicationControllerHard, QuotaCountReplicationControllerUsed, QuotaCountResourceQuotaHard,
+		QuotaCountResourceQuotaUsed, QuotaCountSecretHard, QuotaCountSecretUsed,
+		QuotaCountServiceHard, QuotaCountServiceUsed, QuotaCountServiceLoadBalancerHard,
+		QuotaCountServiceLoadBalancerUsed, QuotaCountServiceNodePortHard, QuotaCountServiceNodePortUsed,
+		QuotaLimitCpuHard, QuotaLimitCpuUsed, QuotaLimitMemoryHard, QuotaLimitMemoryUsed, QuotaRequestCpuHard,
+		QuotaRequestCpuUsed, QuotaRequestMemoryHard, QuotaRequestMemoryUsed:
 		if !isRange { // (1)
 			response = make(map[string]interface{})
 			_ = json.Unmarshal(responseBytes, &response)
@@ -49,7 +53,8 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 		} else { // (2)
 			_ = json.Unmarshal(responseBytes, &response)
 			if len(common.Get(response, "data.result").([]interface{})) != 0 {
-				for _, ele := range response["data"].(map[string]interface{})["result"].([]interface{})[0].(map[string]interface{})["values"].([]interface{}) {
+				values := response["data"].(map[string]interface{})["result"].([]interface{})[0].(map[string]interface{})["values"].([]interface{})
+				for _, ele := range values {
 					temp := make(map[string]interface{})
 					temp["timestamp"] = common.Get(ele, "0")
 					temp["value"] = common.Get(ele, "1")
@@ -66,8 +71,8 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 			}
 		}
 	case // (3)
-		TopNodeCpuByInstance, TopNodeFileSystemByInstance, TopNodeMemoryByInstance,
-		TopNodeNetworkInByInstance, TopNodeNetworkOutByInstance, TopCountPodByNode,
+		TopNodeCpuByNode, TopNodeFileSystemByNode, TopNodeMemoryByNode,
+		TopNodeNetworkInByNode, TopNodeNetworkOutByNode, TopNodePodByNode,
 		Top5ContainerCpuByNamespace, Top5ContainerCpuByPod, Top5ContainerFileSystemByNamespace,
 		Top5ContainerFileSystemByPod, Top5ContainerMemoryByNamespace, Top5ContainerMemoryByPod,
 		Top5ContainerNetworkInByNamespace, Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByNamespace,
@@ -80,11 +85,11 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 
 			switch metricKey {
 			case
-				TopCountPodByNode:
+				TopNodePodByNode:
 				temp["id"] = common.Get(ele, "metric.node")
 			case
-				TopNodeCpuByInstance, TopNodeMemoryByInstance, TopNodeFileSystemByInstance,
-				TopNodeNetworkInByInstance, TopNodeNetworkOutByInstance:
+				TopNodeCpuByNode, TopNodeMemoryByNode, TopNodeFileSystemByNode,
+				TopNodeNetworkInByNode, TopNodeNetworkOutByNode:
 				temp["id"] = common.Get(ele, "metric.instance")
 			case
 				Top5ContainerCpuByNamespace, Top5ContainerFileSystemByNamespace, Top5ContainerMemoryByNamespace,

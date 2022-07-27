@@ -7,15 +7,6 @@ import (
 	"strings"
 )
 
-// UnitTypeKey 단위 정의 키
-type UnitTypeKey string
-
-// UnitType ...
-type UnitType struct {
-	Units   []string
-	Divisor float64
-}
-
 const (
 	Count                = UnitTypeKey("Count")
 	Percentage           = UnitTypeKey("Percentage")
@@ -31,6 +22,16 @@ const (
 	Seconds              = UnitTypeKey("Seconds")
 )
 
+// UnitTypeKey 단위 타입 키
+type UnitTypeKey string
+
+// UnitType 단위 타입 정의 구조체
+type UnitType struct {
+	Units   []string
+	Divisor float64
+}
+
+// UnitTypes 단위 타입 키에 따른 단위 타입 정의 상수
 var (
 	UnitTypes = map[UnitTypeKey]UnitType{
 		Count: {
@@ -84,13 +85,14 @@ var (
 	}
 )
 
+// HumanizeOptions Humanize 함수의 세 번째 인자의 타입으로 Humanize 함수에서 사용하는 옵션을 정의
 type HumanizeOptions struct {
 	Precision     uint
 	InitialUnit   string
 	PreferredUnit string
 }
 
-type HumanizeValue struct {
+type humanizeValue struct {
 	Unit  string
 	Value float64
 }
@@ -100,96 +102,91 @@ type convertedValue struct {
 	unit  string
 }
 
-// shift https://go.dev/play/p/WAEIzRgSNB
+// shift https://go.dev/play/p/WAEIzRgSNB 인자로 받은 string 배열을 shift 하고 값을 반환하는 함수
 func shift(pToSlice *[]string) string {
 	sValue := (*pToSlice)[0]
 	*pToSlice = (*pToSlice)[1:len(*pToSlice)]
 	return sValue
 }
 
-func indexOf(arr []string, val string) int {
-	for pos, v := range arr {
+// indexOf string 배열에 대상값 인덱스 반환
+func indexOf(strings []string, val string) int {
+	for idx, v := range strings {
 		if v == val {
-			return pos
+			return idx
 		}
 	}
 	return -1
 }
 
-// roundFloat https://gosamples.dev/round-float/
+// roundFloat https://gosamples.dev/round-float/ 인자로 받은 value 를 소수점 precision 자리에서 반올림하는 함수
 func roundFloat(val float64, precision uint) float64 {
 	ratio := math.Pow(10, float64(precision))
 	return math.Round(val*ratio) / ratio
 }
 
+// convertBaseValueToUnits value의 단위를 조정하는 함수
 func convertBaseValueToUnits(value float64, unitArray []string, divisor float64, initialUnit string, preferredUnit string) *convertedValue {
 	var sliceIndex = 0
+	var unit = ""
 	if initialUnit != "" {
 		sliceIndex = indexOf(unitArray, initialUnit)
 	}
-	if sliceIndex == -1 {
-		panic("입력 단위를 확인 해주세요.")
-	}
-	units := unitArray[sliceIndex:]
+	if sliceIndex != -1 {
+		units := unitArray[sliceIndex:]
 
-	unitIndex := indexOf(units, preferredUnit)
-	if unitIndex != -1 {
-		return &convertedValue{value / math.Pow(divisor, float64(unitIndex)), preferredUnit}
-	}
+		unitIndex := indexOf(units, preferredUnit)
+		if unitIndex != -1 {
+			return &convertedValue{value / math.Pow(divisor, float64(unitIndex)), preferredUnit}
+		}
 
-	unit := shift(&units)
-	for value >= divisor && len(units) > 0 {
-		value = value / divisor
 		unit = shift(&units)
+		for value >= divisor && len(units) > 0 {
+			value = value / divisor
+			unit = shift(&units)
+		}
 	}
-
 	return &convertedValue{value, unit}
 }
 
-func Humanize(value float64, key UnitTypeKey, options *HumanizeOptions) *HumanizeValue {
-	types := UnitTypes[key]
+// Humanize 인자로 들어온 값을 단위 타입 키에 따라 변환된 humanizeValue 를 반환하는 함수
+func Humanize(value float64, unitTypeKey UnitTypeKey, options *HumanizeOptions) *humanizeValue {
+	types := UnitTypes[unitTypeKey]
 
 	convertedValue := convertBaseValueToUnits(value, types.Units, types.Divisor, options.InitialUnit, options.PreferredUnit)
 
 	result := roundFloat(convertedValue.value.(float64), options.Precision)
 
-	if result == 0 {
+	if value != 0 && result == 0 {
 		var offset int
-		if value != 0 {
-			for i, v := range strings.Split(strconv.FormatFloat(value, 'f', -1, 64), ".")[1] {
-				if string(v) != "0" {
-					offset = i + 2
-					break
-				}
+		for i, v := range strings.Split(strconv.FormatFloat(value, 'f', -1, 64), ".")[1] {
+			if string(v) != "0" {
+				offset = i + 2
+				break
 			}
 		}
 
 		result = roundFloat(value, uint(offset))
 	}
 
-	return &HumanizeValue{
+	return &humanizeValue{
 		convertedValue.unit,
 		result,
 	}
 }
 
+// FindMaxUnitByValues 인자로 들어온 값(배열)의 최대 단위를 반환하는 함수
 func FindMaxUnitByValues(unitTypeKey UnitTypeKey, values interface{}) string {
-	var maxFloat64 float64
-	if str, ok := values.(float64); ok {
+	var maxFloat64 float64 = 0
+	if _, ok := values.(float64); ok {
 		maxFloat64 = values.(float64)
-	} else {
-		fmt.Println("float 64 not ok", str)
 	}
-
-	if str, ok := values.([]float64); ok {
-		fmt.Println("[]float 64 ok", str)
+	if _, ok := values.([]float64); ok {
 		for _, float := range values.([]float64) {
 			if maxFloat64 < float {
 				maxFloat64 = float
 			}
 		}
-	} else {
-		fmt.Println("[]float 64 not ok", str)
 	}
 
 	return Humanize(maxFloat64, unitTypeKey, &HumanizeOptions{Precision: 2}).Unit

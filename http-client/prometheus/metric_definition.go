@@ -7,36 +7,16 @@ import (
 // QueryGenerators 쿼리 템플릿과 쿼리 파라미터를 인자로 받아 쿼리를 반환하는 함수 목록 타입
 type QueryGenerators []func(queryTemplate string, queryParams map[string]interface{}) (string, string)
 
-// QueryTemplateParsers 쿼리 템플릿과 쿼리 파라미터를 인자로 받아 쿼리를 반환하는 함수 목록 타입
-type QueryTemplateParsers []func(queryTemplate string, queryParams map[string]interface{}) (string, string)
-
 // MetricDefinition 메트릭 정의 구조체
 type MetricDefinition struct {
-	Label           string                          // 메트릭의 라벨
-	SubLabels       []string                        // 쿼리 템플릿의 라벨(미필수)
-	QueryInfos      map[PrometheusVersion]QueryInfo // 버전별 쿼리 모음
-	QueryTemplates  []string                        // 쿼리 템플릿
-	QueryGenerators QueryGenerators                 // 쿼리 템플릿에 조건절 추가하여 쿼리를 반환하는 함수 목록(쿼리 템플릿과 맵핑)
-	UnitTypeKeys    []common.UnitTypeKey            // 쿼리 결과값의 단위 타입의 키 목록(쿼리 템플릿과 맵핑)
-	PrimaryUnit     string                          // 쿼리 결과값의 단위 중 주단위
+	Label           string               // 메트릭의 라벨
+	SubLabels       []string             // 쿼리 템플릿의 라벨(미필수)
+	QueryTemplates  []string             // 쿼리 템플릿
+	QueryGenerators QueryGenerators      // 쿼리 템플릿에 조건절 추가하여 쿼리를 반환하는 함수 목록(쿼리 템플릿과 맵핑)
+	UnitTypeKeys    []common.UnitTypeKey // 쿼리 결과값의 단위 타입의 키 목록(쿼리 템플릿과 맵핑)
+	PrimaryUnit     string               // 쿼리 결과값의 단위 중 주단위
 
 	MetricKeys []MetricKey // 다른 메트릭 정의를 활용하는 메트릭(다른 메트릭 활용 시 해당 값만 작성)
-}
-
-// MetricKey 메트릭 키
-type PrometheusVersion string
-
-const (
-	v2_20_0 = PrometheusVersion("2.20.0")
-	v2_26_0 = PrometheusVersion("2.26.0")
-	v2_29_0 = PrometheusVersion("2.29.0")
-	v2_32_0 = PrometheusVersion("2.32.0")
-)
-
-type QueryInfo struct {
-	ReferenceVersion     PrometheusVersion
-	QueryTemplates       []string
-	QueryTemplateParsers QueryTemplateParsers // 쿼리 템플릿에 조건절 추가하여 쿼리를 반환하는 함수 목록(쿼리 템플릿과 맵핑)
 }
 
 // MetricDefinitions 메트릭 키에 따른 메트릭 정의 상수
@@ -44,19 +24,6 @@ var (
 	MetricDefinitions = map[MetricKey]MetricDefinition{
 		ContainerCpu: {
 			Label: "CPU USAGE",
-			QueryInfos: map[PrometheusVersion]QueryInfo{
-				v2_20_0: {
-					QueryTemplates: []string{
-						"sum(rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\",namespace=~\"%s\"}[3m]))",
-					},
-					QueryTemplateParsers: QueryTemplateParsers{
-						queryTemplateParser([]interface{}{"namespace"}),
-					},
-				},
-				v2_26_0: {
-					ReferenceVersion: v2_20_0,
-				},
-			},
 			QueryTemplates: []string{
 				// 컨테이너의 CPU Core 사용량(Core)
 				"sum(rate(container_cpu_usage_seconds_total{container!=\"\",pod!=\"\",namespace=~\"%s\"}[3m]))",
@@ -69,7 +36,7 @@ var (
 			},
 			PrimaryUnit: "Core",
 		},
-		ContainerDiskIOReads: {
+		ContainerDiskIORead: {
 			Label: "DISK IO READS",
 			QueryTemplates: []string{
 				// 컨테이너의 읽기 DISK IO
@@ -83,7 +50,7 @@ var (
 			},
 			PrimaryUnit: "B",
 		},
-		ContainerDiskIOWrites: {
+		ContainerDiskIOWrite: {
 			Label: "DISK IO WRITES",
 			QueryTemplates: []string{
 				// 컨테이너의 쓰기 DISK IO
@@ -217,7 +184,7 @@ var (
 			},
 			PrimaryUnit: "rps",
 		},
-		CustomQuotaCpuLimit: {
+		CustomQuotaLimitCpu: {
 			Label: "CPU LIMIT",
 			QueryTemplates: []string{
 				// 할당된 CPU LIMIT 쿼터
@@ -239,29 +206,7 @@ var (
 			},
 			PrimaryUnit: "Core",
 		},
-		CustomQuotaCpuRequest: {
-			Label: "CPU REQUEST",
-			QueryTemplates: []string{
-				// 할당된 CPU REQUEST 쿼터
-				"sum(kube_resourcequota{resource=\"requests.cpu\"})",
-				// 노드의 CPU Core 수
-				"sum(kube_node_status_capacity{resource=\"cpu\",unit=\"core\"})",
-				// 할당된 CPU REQUEST 쿼터 할당량(%)
-				"sum(kube_resourcequota{resource=\"requests.cpu\"})/sum(kube_node_status_capacity{resource=\"cpu\",unit=\"core\"})*100",
-			},
-			QueryGenerators: QueryGenerators{
-				nil,
-				nil,
-				nil,
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				"",
-				"",
-				common.Percentage,
-			},
-			PrimaryUnit: "Core",
-		},
-		CustomQuotaMemoryLimit: {
+		CustomQuotaLimitMemory: {
 			Label: "MEMORY LIMIT",
 			QueryTemplates: []string{
 				// 할당된 MEMORY LIMIT 쿼터
@@ -283,7 +228,29 @@ var (
 			},
 			PrimaryUnit: "B",
 		},
-		CustomQuotaMemoryRequest: {
+		CustomQuotaRequestCpu: {
+			Label: "CPU REQUEST",
+			QueryTemplates: []string{
+				// 할당된 CPU REQUEST 쿼터
+				"sum(kube_resourcequota{resource=\"requests.cpu\"})",
+				// 노드의 CPU Core 수
+				"sum(kube_node_status_capacity{resource=\"cpu\",unit=\"core\"})",
+				// 할당된 CPU REQUEST 쿼터 할당량(%)
+				"sum(kube_resourcequota{resource=\"requests.cpu\"})/sum(kube_node_status_capacity{resource=\"cpu\",unit=\"core\"})*100",
+			},
+			QueryGenerators: QueryGenerators{
+				nil,
+				nil,
+				nil,
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+				"",
+				common.Percentage,
+			},
+			PrimaryUnit: "Core",
+		},
+		CustomQuotaRequestMemory: {
 			Label: "MEMORY REQUEST",
 			QueryTemplates: []string{
 				// 할당된 MEMORY REQUEST 쿼터
@@ -651,7 +618,348 @@ var (
 			},
 			PrimaryUnit: "rps",
 		},
-		TopNodeCpuByInstance: {
+		QuotaLimitCpuHard: {
+			Label: "CPU LIMIT HARD",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=\"limits.cpu\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				nil,
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaLimitCpuUsed: {
+			Label: "CPU LIMIT USED",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"used\",resource=\"limits.cpu\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				nil,
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaLimitMemoryHard: {
+			Label: "MEMORY LIMIT HARD",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=\"limits.memory\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				nil,
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+			},
+			PrimaryUnit: "B",
+		},
+		QuotaLimitMemoryUsed: {
+			Label: "MEMORY LIMIT USED",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"used\",resource=\"limits.memory\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				nil,
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+			},
+			PrimaryUnit: "B",
+		},
+		QuotaRequestCpuHard: {
+			Label: "CPU REQUEST HARD",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=\"requests.cpu\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				nil,
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaRequestCpuUsed: {
+			Label: "CPU REQUEST USED",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"used\",resource=\"requests.cpu\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				nil,
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaRequestMemoryHard: {
+			Label: "MEMORY REQUEST HARD",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=\"requests.memory\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				nil,
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+			},
+			PrimaryUnit: "B",
+		},
+		QuotaRequestMemoryUsed: {
+			Label: "MEMORY REQUEST USED",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=\"requests.memory\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				nil,
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+			},
+			PrimaryUnit: "B",
+		},
+		QuotaCountConfigMapHard: {
+			Label: "OBJECT COUNT CONFIGMAPS HARD",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=~\".*configmaps\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountConfigMapUsed: {
+			Label: "OBJECT COUNT CONFIGMAPS USED",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"used\",resource=~\".*configmaps\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountPersistentVolumeClaimHard: {
+			Label: "OBJECT COUNT PERSISTENT VOLUME CLAIMS HARD",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=~\".*persistentvolumeclaims\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountPersistentVolumeClaimUsed: {
+			Label: "OBJECT COUNT PERSISTENT VOLUME CLAIMS USED",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=~\".*persistentvolumeclaims\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountPodHard: {
+			Label: "OBJECT COUNT PODS HARD",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=~\".*pods\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountPodUsed: {
+			Label: "OBJECT COUNT PODS USED",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"used\",resource=~\".*pods\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountReplicationControllerHard: {
+			Label: "OBJECT COUNT REPLICATION CONTROLLERS HARD",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=~\".*replicationcontrollers\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountReplicationControllerUsed: {
+			Label: "OBJECT COUNT REPLICATION CONTROLLERS USED",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"used\",resource=~\".*replicationcontrollers\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountResourceQuotaHard: {
+			Label: "OBJECT COUNT RESOURCE QUOTAS HARD",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=~\".*resourcequotas\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountResourceQuotaUsed: {
+			Label: "OBJECT COUNT RESOURCE QUOTAS USED",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"used\",resource=~\".*resourcequotas\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountSecretHard: {
+			Label: "OBJECT COUNT SECRETS HARD",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=~\".*secrets\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountSecretUsed: {
+			Label: "OBJECT COUNT SECRETS USED",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"used\",resource=~\".*secrets\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountServiceHard: {
+			Label: "OBJECT COUNT SERVICES HARD",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=~\".*services\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountServiceUsed: {
+			Label: "OBJECT COUNT SERVICES USED",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"used\",resource=~\".*services\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountServiceLoadBalancerHard: {
+			Label: "OBJECT COUNT SERVICES LOAD BALANCERS HARD",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=~\".*services.loadbalancers\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountServiceLoadBalancerUsed: {
+			Label: "OBJECT COUNT SERVICES LOAD BALANCERS USED",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"used\",resource=~\".*services.loadbalancers\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountServiceNodePortHard: {
+			Label: "OBJECT COUNT SERVICES NODE PORTS HARD",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"hard\",resource=~\".*services.nodeports\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		QuotaCountServiceNodePortUsed: {
+			Label: "OBJECT COUNT SERVICES NODE PORTS USED",
+			QueryTemplates: []string{
+				"sum(kube_resourcequota{type=\"used\",resource=~\".*services.nodeports\",namespace=~\"%s\"})",
+			},
+			QueryGenerators: QueryGenerators{
+				queryGenerator([]interface{}{"namespace"}),
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				"",
+			},
+			PrimaryUnit: "",
+		},
+		SummaryNodeInfo: {
+			MetricKeys: []MetricKey{CustomNodeCpu, CustomNodeFileSystem, CustomNodeMemory, NodeNetworkIn, NodeNetworkOut, NumberOfPod},
+		},
+		TopNodeCpuByNode: {
 			Label: "CPU",
 			QueryTemplates: []string{
 				// 노드의 CPU 사용량에 따른 노드 내림차순 목록
@@ -665,7 +973,7 @@ var (
 			},
 			PrimaryUnit: "Core",
 		},
-		TopNodeFileSystemByInstance: {
+		TopNodeFileSystemByNode: {
 			Label: "FILE SYSTEM",
 			QueryTemplates: []string{
 				// 노드의 FILE SYSTEM 사용량에 따른 노드 내림차순 목록
@@ -679,7 +987,7 @@ var (
 			},
 			PrimaryUnit: "B",
 		},
-		TopNodeMemoryByInstance: {
+		TopNodeMemoryByNode: {
 			Label: "MEMORY",
 			QueryTemplates: []string{
 				// 노드의 MEMORY 사용량에 따른 노드 내림차순 목록
@@ -693,7 +1001,7 @@ var (
 			},
 			PrimaryUnit: "B",
 		},
-		TopNodeNetworkInByInstance: {
+		TopNodeNetworkInByNode: {
 			Label: "NETWORK IN",
 			QueryTemplates: []string{
 				// 노드의 NETWORK IN 에 따른 노드 내림차순 목록
@@ -707,7 +1015,7 @@ var (
 			},
 			PrimaryUnit: "Bps",
 		},
-		TopNodeNetworkOutByInstance: {
+		TopNodeNetworkOutByNode: {
 			Label: "NETWORK OUT",
 			QueryTemplates: []string{
 				// 노드의 NETWORK OUT 에 따른 노드 내림차순 목록
@@ -721,7 +1029,7 @@ var (
 			},
 			PrimaryUnit: "Bps",
 		},
-		TopCountPodByNode: {
+		TopNodePodByNode: {
 			Label: "POD COUNT",
 			QueryTemplates: []string{
 				// 노드별 파드 수에 따른 내림차순 목록
@@ -888,178 +1196,6 @@ var (
 				common.Count,
 			},
 			PrimaryUnit: "",
-		},
-		QuotaCpuLimit: {
-			Label: "CPU LIMIT",
-			QueryTemplates: []string{
-				"sum(kube_resourcequota{resource=\"limits.cpu\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				nil,
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				"",
-			},
-			PrimaryUnit: "",
-		},
-		QuotaCpuRequest: {
-			Label: "CPU REQUEST",
-			QueryTemplates: []string{
-				"sum(kube_resourcequota{resource=\"requests.cpu\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				nil,
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				"",
-			},
-			PrimaryUnit: "",
-		},
-		QuotaMemoryRequest: {
-			Label: "MEMORY REQUEST",
-			QueryTemplates: []string{
-				"sum(kube_resourcequota{resource=\"requests.memory\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				nil,
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.BinaryBytes,
-			},
-			PrimaryUnit: "B",
-		},
-		QuotaMemoryLimit: {
-			Label: "MEMORY LIMIT",
-			QueryTemplates: []string{
-				"sum(kube_resourcequota{resource=\"limits.memory\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				nil,
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				common.BinaryBytes,
-			},
-			PrimaryUnit: "B",
-		},
-		QuotaObjectCountConfigmaps: {
-			Label: "OBJECT COUNT CONFIGMAPS",
-			QueryTemplates: []string{
-				"sum(kube_resourcequota{resource=~\".*configmaps\",namespace=~\"%s\",type=\"hard\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"namespace"}),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				"",
-			},
-			PrimaryUnit: "",
-		},
-		QuotaObjectCountPods: {
-			Label: "OBJECT COUNT PODS",
-			QueryTemplates: []string{
-				"sum(kube_resourcequota{resource=~\".*pods\",namespace=~\"%s\",type=\"hard\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"namespace"}),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				"",
-			},
-			PrimaryUnit: "",
-		},
-		QuotaObjectCountSecrets: {
-			Label: "OBJECT COUNT SECRETS",
-			QueryTemplates: []string{
-				"sum(kube_resourcequota{resource=~\".*secrets\",namespace=~\"%s\",type=\"hard\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"namespace"}),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				"",
-			},
-			PrimaryUnit: "",
-		},
-		QuotaObjectCountReplicationControllers: {
-			Label: "OBJECT COUNT REPLICATION CONTROLLERS",
-			QueryTemplates: []string{
-				"sum(kube_resourcequota{resource=~\".*replicationcontrollers\",namespace=~\"%s\",type=\"hard\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"namespace"}),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				"",
-			},
-			PrimaryUnit: "",
-		},
-		QuotaObjectCountServices: {
-			Label: "OBJECT COUNT SERVICES",
-			QueryTemplates: []string{
-				"sum(kube_resourcequota{resource=~\".*services\",namespace=~\"%s\",type=\"hard\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"namespace"}),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				"",
-			},
-			PrimaryUnit: "",
-		},
-		QuotaObjectCountServicesLoadBalancers: {
-			Label: "OBJECT COUNT SERVICES LOAD BALANCERS",
-			QueryTemplates: []string{
-				"sum(kube_resourcequota{resource=~\".*services.loadbalancers\",namespace=~\"%s\",type=\"hard\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"namespace"}),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				"",
-			},
-			PrimaryUnit: "",
-		},
-		QuotaObjectCountServicesNodePorts: {
-			Label: "OBJECT COUNT SERVICES NODE PORTS",
-			QueryTemplates: []string{
-				"sum(kube_resourcequota{resource=~\".*services.nodeports\",namespace=~\"%s\",type=\"hard\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"namespace"}),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				"",
-			},
-			PrimaryUnit: "",
-		},
-		QuotaObjectCountResourceQuotas: {
-			Label: "OBJECT COUNT RESOURCE QUOTAS",
-			QueryTemplates: []string{
-				"sum(kube_resourcequota{resource=~\".*resourcequotas\",namespace=~\"%s\",type=\"hard\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"namespace"}),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				"",
-			},
-			PrimaryUnit: "",
-		},
-		QuotaObjectCountPersistentVolumeClaims: {
-			Label: "OBJECT COUNT PERSISTENT VOLUME CLAIMS",
-			QueryTemplates: []string{
-				"sum(kube_resourcequota{resource=~\".*persistentvolumeclaims\",namespace=~\"%s\",type=\"hard\"})",
-			},
-			QueryGenerators: QueryGenerators{
-				queryGenerator([]interface{}{"namespace"}),
-			},
-			UnitTypeKeys: []common.UnitTypeKey{
-				"",
-			},
-			PrimaryUnit: "",
-		},
-		SummaryNodeInfo: {
-			MetricKeys: []MetricKey{CustomNodeCpu, CustomNodeFileSystem, CustomNodeMemory, NodeNetworkIn, NodeNetworkOut, NumberOfPod},
 		},
 	}
 )

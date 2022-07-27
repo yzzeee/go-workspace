@@ -24,20 +24,25 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 	maxValueUnit string, subLabels []string, isRange bool, resultSets ...interface{}) MetricResponse {
 	switch metricKey {
 	case
-		ContainerCpu, ContainerDiskIOReads, ContainerDiskIOWrites, ContainerFileSystem, ContainerMemory,
+		ContainerCpu, ContainerDiskIORead, ContainerDiskIOWrite, ContainerFileSystem, ContainerMemory,
 		ContainerNetworkIn, ContainerNetworkIO, ContainerNetworkOut, ContainerNetworkPacket, ContainerNetworkPacketDrop,
 		NodeCpu, NodeCpuLoadAverage, NodeDiskIO, NodeFileSystem, NodeMemory,
 		NodeNetworkIn, NodeNetworkIO, NodeNetworkOut, NodeNetworkPacket, NodeNetworkPacketDrop,
-		NumberOfContainer, NumberOfDeployment, NumberOfIngress, NumberOfPod, NumberOfNamespace,
-		NumberOfService, NumberOfStatefulSet, NumberOfVolume, QuotaCpuLimit, QuotaCpuRequest,
-		QuotaMemoryLimit, QuotaMemoryRequest, QuotaObjectCountConfigmaps, QuotaObjectCountPods, QuotaObjectCountSecrets,
-		QuotaObjectCountReplicationControllers, QuotaObjectCountServices, QuotaObjectCountServicesLoadBalancers,
-		QuotaObjectCountServicesNodePorts, QuotaObjectCountResourceQuotas, QuotaObjectCountPersistentVolumeClaims:
+		NumberOfContainer, NumberOfDeployment, NumberOfIngress, NumberOfNamespace, NumberOfPod,
+		NumberOfService, NumberOfStatefulSet, NumberOfVolume, QuotaCountConfigMapHard, QuotaCountConfigMapUsed,
+		QuotaCountPersistentVolumeClaimHard, QuotaCountPersistentVolumeClaimUsed, QuotaCountPodHard,
+		QuotaCountPodUsed, QuotaCountReplicationControllerHard, QuotaCountReplicationControllerUsed,
+		QuotaCountResourceQuotaHard, QuotaCountResourceQuotaUsed, QuotaCountSecretHard,
+		QuotaCountSecretUsed, QuotaCountServiceHard, QuotaCountServiceUsed,
+		QuotaCountServiceLoadBalancerHard, QuotaCountServiceLoadBalancerUsed, QuotaCountServiceNodePortHard,
+		QuotaCountServiceNodePortUsed, QuotaLimitCpuHard, QuotaLimitCpuUsed, QuotaLimitMemoryHard, QuotaLimitMemoryUsed,
+		QuotaRequestCpuHard, QuotaRequestCpuUsed, QuotaRequestMemoryHard, QuotaRequestMemoryUsed:
 		if !isRange {
 			var resultSet0, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[0]), 64)
 
 			if unitTypeKeys != nil && unitTypeKeys[0] != "" {
-				resultSet0 = common.Humanize(resultSet0, unitTypeKeys[0], &common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
+				resultSet0 = common.Humanize(resultSet0, unitTypeKeys[0],
+					&common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
 			}
 			return MetricResponse{
 				Usage: fmt.Sprintf("%v", resultSet0),
@@ -57,7 +62,8 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 				for idx, values := range resultSets[maxIdx].([]interface{}) {
 					temp := values.(map[string]interface{})
 					var value, _ = strconv.ParseFloat(fmt.Sprintf("%s", temp["value"]), 64)
-					temp[subLabels[maxIdx]] = common.Humanize(value, unitTypeKeys[maxIdx], &common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
+					temp[subLabels[maxIdx]] = common.Humanize(value, unitTypeKeys[maxIdx],
+						&common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
 					for j := 0; j < len(resultSets); j++ {
 						if maxIdx != j {
 							if resultSets[j] == nil {
@@ -66,7 +72,8 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 							} else if len(resultSets[j].([]interface{})) > idx {
 								var tempJ = resultSets[j].([]interface{})[idx].(map[string]interface{})["value"]
 								var valueJ, _ = strconv.ParseFloat(fmt.Sprintf("%s", tempJ), 64)
-								temp[subLabels[j]] = common.Humanize(valueJ, unitTypeKeys[j], &common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
+								temp[subLabels[j]] = common.Humanize(valueJ, unitTypeKeys[j],
+									&common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
 							}
 						}
 					}
@@ -78,9 +85,36 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 			}
 		}
 	case
-		TopNodeCpuByInstance, TopNodeFileSystemByInstance, TopNodeMemoryByInstance, TopNodeNetworkInByInstance, TopNodeNetworkOutByInstance,
-		TopCountPodByNode, Top5ContainerCpuByNamespace, Top5ContainerCpuByPod, Top5ContainerFileSystemByNamespace, Top5ContainerFileSystemByPod,
-		Top5ContainerMemoryByNamespace, Top5ContainerMemoryByPod, Top5ContainerNetworkInByNamespace, Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByNamespace,
+		CustomNodeCpu, CustomNodeFileSystem, CustomNodeMemory, CustomQuotaLimitCpu, CustomQuotaLimitMemory,
+		CustomQuotaRequestCpu, CustomQuotaRequestMemory:
+		if len(resultSets) != 0 {
+			var resultSet0, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[0]), 64)
+			var resultSet1, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[1]), 64)
+			var resultSet2, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[2]), 64)
+			if unitTypeKeys != nil && unitTypeKeys[0] != "" {
+				resultSet0 = common.Humanize(resultSet0, unitTypeKeys[0],
+					&common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
+			}
+			if unitTypeKeys != nil && unitTypeKeys[1] != "" {
+				resultSet1 = common.Humanize(resultSet1, unitTypeKeys[1],
+					&common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
+			}
+			if unitTypeKeys != nil && unitTypeKeys[2] != "" {
+				resultSet2 = common.Humanize(resultSet2, unitTypeKeys[2],
+					&common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
+			}
+			return MetricResponse{
+				Usage:      fmt.Sprintf("%v", resultSet0),
+				Total:      fmt.Sprintf("%v", resultSet1),
+				Percentage: fmt.Sprintf("%v", resultSet2),
+			}
+		}
+	case
+		TopNodeCpuByNode, TopNodeFileSystemByNode, TopNodeMemoryByNode,
+		TopNodeNetworkInByNode, TopNodeNetworkOutByNode, TopNodePodByNode,
+		Top5ContainerCpuByNamespace, Top5ContainerCpuByPod, Top5ContainerFileSystemByNamespace,
+		Top5ContainerFileSystemByPod, Top5ContainerMemoryByNamespace, Top5ContainerMemoryByPod,
+		Top5ContainerNetworkInByNamespace, Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByNamespace,
 		Top5ContainerNetworkOutByPod, Top5CountPodByNamespace:
 		if len(resultSets) != 0 && resultSets[0] != nil {
 			var resultSet0 = resultSets[0].(map[int]interface{})
@@ -88,34 +122,14 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 				for _, values := range resultSet0 {
 					temp := values.(map[string]interface{})
 					var value, _ = strconv.ParseFloat(fmt.Sprintf("%s", temp["value"]), 64)
-					temp["value"] = strconv.FormatFloat(common.Humanize(value, unitTypeKeys[0], &common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value, 'f', -1, 64)
-					temp["unit"] = common.Humanize(value, unitTypeKeys[0], &common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Unit
+					temp["value"] = strconv.FormatFloat(common.Humanize(value, unitTypeKeys[0],
+						&common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value, 'f', -1, 64)
+					temp["unit"] = common.Humanize(value, unitTypeKeys[0],
+						&common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Unit
 				}
 			}
 			return MetricResponse{
 				Values: resultSet0,
-			}
-		}
-	case
-		CustomNodeCpu, CustomNodeFileSystem, CustomNodeMemory, CustomQuotaCpuLimit, CustomQuotaCpuRequest,
-		CustomQuotaMemoryLimit, CustomQuotaMemoryRequest:
-		if len(resultSets) != 0 {
-			var resultSet0, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[0]), 64)
-			var resultSet1, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[1]), 64)
-			var resultSet2, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[2]), 64)
-			if unitTypeKeys != nil && unitTypeKeys[0] != "" {
-				resultSet0 = common.Humanize(resultSet0, unitTypeKeys[0], &common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
-			}
-			if unitTypeKeys != nil && unitTypeKeys[1] != "" {
-				resultSet1 = common.Humanize(resultSet1, unitTypeKeys[1], &common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
-			}
-			if unitTypeKeys != nil && unitTypeKeys[2] != "" {
-				resultSet2 = common.Humanize(resultSet2, unitTypeKeys[2], &common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
-			}
-			return MetricResponse{
-				Usage:      fmt.Sprintf("%v", resultSet0),
-				Total:      fmt.Sprintf("%v", resultSet1),
-				Percentage: fmt.Sprintf("%v", resultSet2),
 			}
 		}
 	case
