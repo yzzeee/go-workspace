@@ -2,21 +2,14 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 )
-
-func indexOf(arr []string, val string) int {
-	for pos, v := range arr {
-		if v == val {
-			return pos
-		}
-	}
-	return -1
-}
 
 func main() {
 	var testMap = map[string]string{
@@ -44,29 +37,101 @@ func main() {
 	elapseTime2 := time.Since(startTime2)
 	fmt.Println(elapseTime2, keys2)
 
-	// -------------------------------------------------------------
-
-	// 제공된 버전 정보(순차적으로 정렬되어 있음)
-	var orderedVersionList = []string{"1.1.2", "1.1.5", "2.0.4", "2.0.9", "5.0.3"}
+	fmt.Println("================================================================================================")
 
 	// 사용하고자 하는 버전 정보
 	//var inputVersion = "2.0.4"
 	//var inputVersion = "2.29.0"
-	var inputVersion = "2.0.5-rc1"
+	var inputVersion = "2.1.5-rc1"
+
+	fmt.Println("입력한 버전: ", inputVersion)
+	fmt.Println("================================================================================================")
+
+	versionSlice := make([]version, 0)
+	versionSlice = append(versionSlice, version{"1.1.2"})
+	versionSlice = append(versionSlice, version{"1.1.5"})
+	versionSlice = append(versionSlice, version{"2.0.4"})
+	versionSlice = append(versionSlice, version{"2.0.9"})
+	versionSlice = append(versionSlice, version{"5.0.3"})
+	versionSlice = append(versionSlice, version{parseVersion(inputVersion)}) // 사용자가 입력한 버전
+
+	sort.Slice(versionSlice, func(i, j int) bool {
+		a := strings.Split(versionSlice[i].version, ".")
+		b := strings.Split(versionSlice[j].version, ".")
+		max := math.Max(float64(len(a)), float64(len(b)))
+		return pad(max, a) < pad(max, b)
+	})
+
+	versionKeys := make([]string, 0, len(versionSlice))
+	for key := range versionSlice {
+		versionKeys = append(versionKeys, versionSlice[key].version)
+	}
+
+	inputVersionIdx := indexOf(versionKeys, parseVersion(inputVersion))
+	var usedVersion string
+	if inputVersionIdx == 0 {
+		usedVersion = versionKeys[inputVersionIdx+1]
+	} else {
+		usedVersion = versionKeys[inputVersionIdx-1]
+	}
+	fmt.Println("선택된 버전 1: ", usedVersion)
+
+	fmt.Println("================================================================================================")
+
+	// 제공된 버전 정보(순차적으로 정렬되어 있음)
+	var orderedVersionList = []string{"1.1.2", "1.1.5", "2.0.4", "2.0.9", "5.0.3"}
 
 	// 정의된 버전이 존재하는지 확인
 	index := indexOf(keys1, inputVersion)
 	if index == -1 {
 		// 정의된 버전이 없는 경우 제공된 버전 목록에서 하위 버전 중 가장 가까운 버전을 찾음
-		foundVersion := parseVersion(inputVersion, orderedVersionList)
+		foundVersion := parseVersion2(inputVersion, orderedVersionList)
 
 		// 선택된 버전 확인
-		fmt.Println(foundVersion)
+		fmt.Println("선택된 버전 2: ", foundVersion)
 	} else {
 		// 버전이 존재하는 경우
 		fmt.Println(index, testMap[keys1[index]])
 		fmt.Println(inputVersion)
 	}
+}
+
+func indexOf(arr []string, val string) int {
+	for pos, v := range arr {
+		if v == val {
+			return pos
+		}
+	}
+	return -1
+}
+
+type version struct {
+	version string
+}
+
+func pad(max float64, version []string) int {
+	x := make([]string, int(max))
+	for i := range x {
+		x[i] = "000"
+	}
+	for j := range version {
+		x[j] = fmt.Sprintf("%03s", version[j])
+	}
+	n, _ := strconv.Atoi(strings.Join(x, ""))
+	return n
+}
+
+func parseVersion(version string) string {
+	// - 이후의 정보는 제거
+	i := strings.Index(version, "-")
+
+	if i > -1 {
+		version = version[:i]
+	}
+
+	// 사용자 입력 버전 정보 처리(숫자 및 . 을 제외한 문자를 제거)
+	regex := regexp.MustCompile(`[^0-9.]`)
+	return regex.ReplaceAllString(version, "")
 }
 
 func splitedVersion(inputVersion string) (int, int, int) {
@@ -104,7 +169,7 @@ func splitedVersion(inputVersion string) (int, int, int) {
 	return major, minor, patch
 }
 
-func parseVersion(inputVersion string, orderedVersionList []string) string {
+func parseVersion2(inputVersion string, orderedVersionList []string) string {
 	var orderedSplitedVersionList [][3]int
 
 	var maxMajor int
