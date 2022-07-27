@@ -87,3 +87,12 @@ func MergeJSONMaps(maps ...map[string]interface{}) (result map[string]interface{
 	}
 	return result
 }
+
+func IndexOf(arr []string, val string) int {
+	for pos, v := range arr {
+		if v == val {
+			return pos
+		}
+	}
+	return -1
+}
