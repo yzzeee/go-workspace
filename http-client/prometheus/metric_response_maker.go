@@ -36,7 +36,9 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 		QuotaCountSecretUsed, QuotaCountServiceHard, QuotaCountServiceUsed,
 		QuotaCountServiceLoadBalancerHard, QuotaCountServiceLoadBalancerUsed, QuotaCountServiceNodePortHard,
 		QuotaCountServiceNodePortUsed, QuotaLimitCpuHard, QuotaLimitCpuUsed, QuotaLimitMemoryHard, QuotaLimitMemoryUsed,
-		QuotaRequestCpuHard, QuotaRequestCpuUsed, QuotaRequestMemoryHard, QuotaRequestMemoryUsed:
+		QuotaLimitPodCpu, QuotaLimitPodEphemeralStorage, QuotaLimitPodMemory,
+		QuotaRequestCpuHard, QuotaRequestCpuUsed, QuotaRequestMemoryHard, QuotaRequestMemoryUsed, QuotaRequestPodCpu,
+		QuotaRequestPodEphemeralStorage, QuotaRequestPodMemory, QuotaRequestStorageHard, QuotaRequestStorageUsed:
 		if !isRange {
 			var resultSet0, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[0]), 64)
 
@@ -111,11 +113,11 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 		}
 	case
 		TopNodeCpuByNode, TopNodeFileSystemByNode, TopNodeMemoryByNode,
-		TopNodeNetworkInByNode, TopNodeNetworkOutByNode, TopNodePodByNode,
+		TopNodeNetworkInByNode, TopNodeNetworkOutByNode, TopNodePodCountByNode,
 		Top5ContainerCpuByNamespace, Top5ContainerCpuByPod, Top5ContainerFileSystemByNamespace,
 		Top5ContainerFileSystemByPod, Top5ContainerMemoryByNamespace, Top5ContainerMemoryByPod,
 		Top5ContainerNetworkInByNamespace, Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByNamespace,
-		Top5ContainerNetworkOutByPod, Top5CountPodByNamespace:
+		Top5ContainerNetworkOutByPod, Top5CountContainerByPod, Top5CountPodByNamespace:
 		if len(resultSets) != 0 && resultSets[0] != nil {
 			var resultSet0 = resultSets[0].(map[int]interface{})
 			if unitTypeKeys != nil && unitTypeKeys[0] != "" {

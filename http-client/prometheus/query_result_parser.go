@@ -39,8 +39,11 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 		QuotaCountResourceQuotaUsed, QuotaCountSecretHard, QuotaCountSecretUsed,
 		QuotaCountServiceHard, QuotaCountServiceUsed, QuotaCountServiceLoadBalancerHard,
 		QuotaCountServiceLoadBalancerUsed, QuotaCountServiceNodePortHard, QuotaCountServiceNodePortUsed,
-		QuotaLimitCpuHard, QuotaLimitCpuUsed, QuotaLimitMemoryHard, QuotaLimitMemoryUsed, QuotaRequestCpuHard,
-		QuotaRequestCpuUsed, QuotaRequestMemoryHard, QuotaRequestMemoryUsed:
+		QuotaLimitCpuHard, QuotaLimitCpuUsed, QuotaLimitMemoryHard, QuotaLimitMemoryUsed, QuotaLimitPodCpu,
+		QuotaLimitPodEphemeralStorage, QuotaLimitPodMemory, QuotaRequestCpuHard, QuotaRequestCpuUsed,
+		QuotaRequestMemoryHard, QuotaRequestMemoryUsed, QuotaRequestPodCpu,
+		QuotaRequestPodEphemeralStorage, QuotaRequestPodMemory, QuotaRequestStorageHard,
+		QuotaRequestStorageUsed:
 		if !isRange { // (1)
 			response = make(map[string]interface{})
 			_ = json.Unmarshal(responseBytes, &response)
@@ -72,11 +75,11 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 		}
 	case // (3)
 		TopNodeCpuByNode, TopNodeFileSystemByNode, TopNodeMemoryByNode,
-		TopNodeNetworkInByNode, TopNodeNetworkOutByNode, TopNodePodByNode,
+		TopNodeNetworkInByNode, TopNodeNetworkOutByNode, TopNodePodCountByNode,
 		Top5ContainerCpuByNamespace, Top5ContainerCpuByPod, Top5ContainerFileSystemByNamespace,
 		Top5ContainerFileSystemByPod, Top5ContainerMemoryByNamespace, Top5ContainerMemoryByPod,
 		Top5ContainerNetworkInByNamespace, Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByNamespace,
-		Top5ContainerNetworkOutByPod, Top5CountPodByNamespace:
+		Top5ContainerNetworkOutByPod, Top5CountContainerByPod, Top5CountPodByNamespace:
 		response = make(map[string]interface{})
 		_ = json.Unmarshal(responseBytes, &response)
 
@@ -85,7 +88,7 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 
 			switch metricKey {
 			case
-				TopNodePodByNode:
+				TopNodePodCountByNode:
 				temp["id"] = common.Get(ele, "metric.node")
 			case
 				TopNodeCpuByNode, TopNodeMemoryByNode, TopNodeFileSystemByNode,
@@ -98,7 +101,7 @@ func ParseQueryResult(metricKey MetricKey, isPrimaryUnit bool, responseBytes []b
 				temp["id"] = common.Get(ele, "metric.namespace")
 			case
 				Top5ContainerCpuByPod, Top5ContainerFileSystemByPod, Top5ContainerMemoryByPod,
-				Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByPod:
+				Top5ContainerNetworkInByPod, Top5ContainerNetworkOutByPod, Top5CountContainerByPod:
 				temp["id"] = common.Get(ele, "metric.pod")
 			}
 			temp["timestamp"] = common.Get(ele, "value").([]interface{})[0] // value 의 첫 번째 원소는 timestamp

@@ -30,7 +30,7 @@ func main() {
 
 	bodyParams := map[string]interface{}{
 		//"metricKeys": []string{"container_cpu"},
-		"metricKeys": []string{"container_disk_io_read"},
+		//"metricKeys": []string{"container_disk_io_read"},
 		//"metricKeys": []string{"container_disk_io_write"},
 		//"metricKeys": []string{"container_file_system"},
 		//"metricKeys": []string{"container_memory"},
@@ -87,10 +87,18 @@ func main() {
 		//"metricKeys": []string{"quota_limit_cpu_used"},
 		//"metricKeys": []string{"quota_limit_memory_hard"},
 		//"metricKeys": []string{"quota_limit_memory_used"},
+		"metricKeys": []string{"quota_limit_pod_cpu"},
+		//"metricKeys": []string{"quota_limit_pod_ephemeral_storage"},
+		//"metricKeys": []string{"quota_limit_pod_memory"},
 		//"metricKeys": []string{"quota_request_cpu_hard"},
 		//"metricKeys": []string{"quota_request_cpu_used"},
 		//"metricKeys": []string{"quota_request_memory_hard"},
 		//"metricKeys": []string{"quota_request_memory_used"},
+		//"metricKeys": []string{"quota_request_pod_cpu"},
+		//"metricKeys": []string{"quota_request_pod_ephemeral_storage"},
+		//"metricKeys": []string{"quota_request_pod_memory"},
+		//"metricKeys": []string{"quota_request_storage_hard"},
+		//"metricKeys": []string{"quota_request_storage_used"},
 		//"metricKeys": []string{"summary_node_info"},
 		//"metricKeys": []string{"top_node_cpu_by_node"},
 		//"metricKeys": []string{"top_node_file_system_by_node"},
@@ -108,12 +116,15 @@ func main() {
 		//"metricKeys": []string{"top5_container_network_in_by_pod"},
 		//"metricKeys": []string{"top5_container_network_out_by_namespace"},
 		//"metricKeys": []string{"top5_container_network_out_by_pod"},
+		//"metricKeys": []string{"top5_count_container_by_pod"},
 		//"metricKeys": []string{"top5_count_pod_by_namespace"},
 		//"start": strconv.Itoa(int(now.Add(-time.Minute*5).Unix())),
 		//"end": strconv.Itoa(int(now.Unix())),
+		//"start": "1658970600",
+		//"end": "1658974200",
 		//"step": "120",
-		//"node": "master3.ocp4.inno.com|worker2.ocp4.inno.com",
-		//"instance": "master3.ocp4.inno.com|worker2.ocp4.inno.com",
+		//"node": "master1.ocp4.inno.com|master2.ocp4.inno.com|master3.ocp4.inno.com|worker1.ocp4.inno.com|worker2.ocp4.inno.com|worker3.ocp4.inno.com",
+		//"instance": "master1.ocp4.inno.com|master2.ocp4.inno.com|master3.ocp4.inno.com|worker1.ocp4.inno.com|worker2.ocp4.inno.com|worker3.ocp4.inno.com",
 		//"namespace": ".*",
 	}
 
@@ -144,7 +155,7 @@ func main() {
 
 		// 최종 결과 확인
 		var err error
-		if metricKey == "quota_limit_range" {
+		if metricKey == "limit_range" {
 			final, err = kubernetes.GetLimitRange()
 			if err != nil {
 				fmt.Printf("failed to get limit range by Kubernetes API, err=%s\n", err)
@@ -180,7 +191,7 @@ func getQueryResult(metricKey prometheus.MetricKey, bodyParams map[string]interf
 		subLabels = []string{label}
 	}
 	//var clusterPrometheusVersion = "2.1.5-rc1"
-	var clusterPrometheusVersion = "2.26.4"
+	var clusterPrometheusVersion = "2.27.0"
 
 	queryInfos := metricDefinition.QueryInfos
 	definedVersions := make([]string, 0, len(queryInfos))
@@ -204,7 +215,7 @@ func getQueryResult(metricKey prometheus.MetricKey, bodyParams map[string]interf
 		targetVersion = referenceVersion
 	}
 	queryTemplates := queryInfos[targetVersion].QueryTemplates
-	queryTemplateParsers := queryInfos[targetVersion].QueryTemplateParsers
+	queryTemplateParsers := queryInfos[targetVersion].QueryTemplateParserGenerators
 	unitTypeKeys := metricDefinition.UnitTypeKeys
 	primaryUnit := metricDefinition.PrimaryUnit
 

@@ -40,7 +40,8 @@ func ParseVersion(version string) string {
 
 	// 사용자 입력 버전 정보 처리(숫자 및 . 을 제외한 문자를 제거)
 	regex := regexp.MustCompile(`[^0-9.]`)
-	return regex.ReplaceAllString(version, "")
+	regex.ReplaceAllString(version, "")
+	return version
 }
 
 func sortVersions(versions []string) []string {
@@ -78,8 +79,8 @@ func pad(max float64, version []string) int {
 	return n
 }
 
-// queryTemplateParser 쿼리 템플릿과 쿼리 파라미터를 인자로 받아서 쿼리를 생성하는 클로저를 반환하는 함수
-func queryTemplateParser(paramKeys []interface{}) func(string, map[string]interface{}) (string, string) {
+// queryTemplateParserGenerator 쿼리 템플릿과 쿼리 파라미터를 인자로 받아서 쿼리를 생성하는 클로저를 반환하는 함수
+func queryTemplateParserGenerator(paramKeys []interface{}) func(string, map[string]interface{}) (string, string) {
 	params := make([]interface{}, len(paramKeys))
 	return func(queryTemplate string, bodyParams map[string]interface{}) (string, string) {
 		var rangeParams string
