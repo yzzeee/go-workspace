@@ -47,7 +47,7 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 					&common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
 			}
 			return MetricResponse{
-				Usage: fmt.Sprintf("%v", resultSet0),
+				Usage: strconv.FormatFloat(resultSet0, 'f', -1, 64),
 			}
 		} else {
 			var resultSet0 []interface{}
