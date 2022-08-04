@@ -119,8 +119,8 @@ func indexOf(strings []string, val string) int {
 	return -1
 }
 
-// roundFloat https://gosamples.dev/round-float/ 인자로 받은 value 를 소수점 precision 자리에서 반올림하는 함수
-func roundFloat(val float64, precision uint) float64 {
+// RoundFloat https://gosamples.dev/round-float/ 인자로 받은 value 를 소수점 precision 자리에서 반올림하는 함수
+func RoundFloat(val float64, precision uint) float64 {
 	ratio := math.Pow(10, float64(precision))
 	return math.Round(val*ratio) / ratio
 }
@@ -155,7 +155,7 @@ func Humanize(value float64, unitTypeKey UnitTypeKey, options *HumanizeOptions) 
 
 	convertedValue := convertBaseValueToUnits(value, types.Units, types.Divisor, options.InitialUnit, options.PreferredUnit)
 
-	result := roundFloat(convertedValue.value.(float64), options.Precision)
+	result := RoundFloat(convertedValue.value.(float64), options.Precision)
 
 	if value != 0 && result == 0 {
 		var offset int
@@ -166,7 +166,7 @@ func Humanize(value float64, unitTypeKey UnitTypeKey, options *HumanizeOptions) 
 			}
 		}
 
-		result = roundFloat(value, uint(offset))
+		result = RoundFloat(value, uint(offset))
 	}
 
 	return &humanizeValue{
@@ -200,7 +200,7 @@ func main() {
 	//fmt.Println(convertBaseValueToUnits(1000, arr, 1000, "k", "b"))
 
 	//number := 12.00
-	//fmt.Println(roundFloat(number, 2))
+	//fmt.Println(RoundFloat(number, 2))
 	//
 	fmt.Println(fmt.Sprintf("%v", Humanize(0.00002, DecimalBytes, &HumanizeOptions{2, "", ""})))
 
@@ -220,11 +220,11 @@ func main() {
 		}
 	}
 
-	//fmt.Println(roundFloat(0.0000000234, 10))
-	//fmt.Println(roundFloat(0.234, 1))
-	//fmt.Println(roundFloat(0.234, 2))
-	//fmt.Println(roundFloat(0.035, 1))
-	fmt.Println(strconv.FormatFloat(roundFloat(value, uint(tt+2)), 'f', -1, 64))
+	//fmt.Println(RoundFloat(0.0000000234, 10))
+	//fmt.Println(RoundFloat(0.234, 1))
+	//fmt.Println(RoundFloat(0.234, 2))
+	//fmt.Println(RoundFloat(0.035, 1))
+	fmt.Println(strconv.FormatFloat(RoundFloat(value, uint(tt+2)), 'f', -1, 64))
 
 	//fmt.Println(FindMaxUnitByValues(BinaryBytes, []float64{311113.33, 3111.33, 300000000}))
 	//fmt.Println(FindMaxUnitByValues(BinaryBytes, []float64{1000, 10000, 100000099000}))

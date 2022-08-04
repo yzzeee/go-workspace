@@ -203,10 +203,10 @@ var (
 				},
 			},
 			UnitTypeKeys: []common.UnitTypeKey{
-				common.Numeric,
-				common.Numeric,
+				common.PacketsPerSec,
+				common.PacketsPerSec,
 			},
-			PrimaryUnit: "",
+			PrimaryUnit: "pps",
 		},
 		ContainerNetworkPacketDrop: {
 			Label: "NETWORK PACKET DROP",
@@ -233,6 +233,29 @@ var (
 				common.Numeric,
 			},
 			PrimaryUnit: "rps",
+		},
+		CustomContainerVolume: {
+			Label: "PERSISTENT VOLUME",
+			QueryInfos: map[PrometheusVersion]QueryInfo{
+				v2_20_0: {
+					QueryTemplates: []string{
+						"sum(kubelet_volume_stats_used_bytes{node=~\"%s\"})",
+						"sum(kubelet_volume_stats_capacity_bytes{node=~\"%s\"})",
+						"sum(kubelet_volume_stats_used_bytes{node=~\"%s\"})/sum(kubelet_volume_stats_capacity_bytes{node=~\"%s\"})*100",
+					},
+					QueryTemplateParserGenerators: QueryTemplateParserGenerators{
+						queryTemplateParserGenerator([]interface{}{"node"}),
+						queryTemplateParserGenerator([]interface{}{"node"}),
+						queryTemplateParserGenerator([]interface{}{"node", "node"}),
+					},
+				},
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.BinaryBytes,
+				common.BinaryBytes,
+				common.Percentage,
+			},
+			PrimaryUnit: "B",
 		},
 		CustomQuotaLimitCpu: {
 			Label: "CPU LIMIT",
@@ -1348,6 +1371,12 @@ var (
 		},
 		SummaryNodeInfo: {
 			MetricKeys: []MetricKey{CustomNodeCpu, CustomNodeFileSystem, CustomNodeMemory, NodeNetworkIn, NodeNetworkOut, NumberOfPod},
+		},
+		SummaryContainerCpuInfo: {
+			MetricKeys: []MetricKey{ContainerCpu, QuotaRequestPodCpu, QuotaLimitPodCpu},
+		},
+		SummaryContainerMemoryInfo: {
+			MetricKeys: []MetricKey{ContainerMemory, QuotaRequestPodMemory, QuotaLimitPodMemory},
 		},
 		TopNodeCpuByNode: {
 			Label: "CPU",

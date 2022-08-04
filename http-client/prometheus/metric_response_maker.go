@@ -11,6 +11,7 @@ import (
 type MetricResponse struct {
 	Label      string      `json:"label,omitempty"`
 	Usage      string      `json:"usage,omitempty"`
+	RawUsage   string      `json:"rawUsage,omitempty"`
 	Total      string      `json:"total,omitempty"`
 	Percentage string      `json:"percentage,omitempty"`
 	Unit       string      `json:"unit,omitempty"`
@@ -40,6 +41,7 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 		QuotaRequestCpuHard, QuotaRequestCpuUsed, QuotaRequestMemoryHard, QuotaRequestMemoryUsed, QuotaRequestPodCpu,
 		QuotaRequestPodEphemeralStorage, QuotaRequestPodMemory, QuotaRequestStorageHard, QuotaRequestStorageUsed:
 		if !isRange {
+			var rawUsage = resultSets[0]
 			var resultSet0, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[0]), 64)
 
 			if unitTypeKeys != nil && unitTypeKeys[0] != "" {
@@ -47,7 +49,8 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 					&common.HumanizeOptions{PreferredUnit: maxValueUnit, Precision: 2}).Value
 			}
 			return MetricResponse{
-				Usage: strconv.FormatFloat(resultSet0, 'f', -1, 64),
+				Usage:    strconv.FormatFloat(resultSet0, 'f', -1, 64),
+				RawUsage: fmt.Sprintf("%s", rawUsage),
 			}
 		} else {
 			var resultSet0 []interface{}
@@ -87,8 +90,8 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 			}
 		}
 	case
-		CustomNodeCpu, CustomNodeFileSystem, CustomNodeMemory, CustomQuotaLimitCpu, CustomQuotaLimitMemory,
-		CustomQuotaRequestCpu, CustomQuotaRequestMemory:
+		CustomContainerVolume, CustomNodeCpu, CustomNodeFileSystem, CustomNodeMemory, CustomQuotaLimitCpu,
+		CustomQuotaLimitMemory, CustomQuotaRequestCpu, CustomQuotaRequestMemory:
 		if len(resultSets) != 0 {
 			var resultSet0, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[0]), 64)
 			var resultSet1, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[1]), 64)
@@ -158,6 +161,88 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 					values[label] = fmt.Sprintf("%s", usage)
 				}
 			}
+			return MetricResponse{
+				Values: values,
+			}
+		}
+	case
+		SummaryContainerCpuInfo, SummaryContainerMemoryInfo:
+		values := make(map[string]interface{})
+		if len(resultSets) != 0 && resultSets[0] != nil {
+			resultSet0 := resultSets[0].(map[string]interface{})
+			var usagePercentage interface{}
+			var rawLimitValue interface{}
+
+			for key, value := range resultSet0 {
+				switch MetricKey(key) {
+				case ContainerCpu, ContainerMemory, QuotaRequestPodCpu, QuotaRequestPodMemory:
+					var label string
+					switch MetricKey(key) {
+					case ContainerCpu, ContainerMemory:
+						label = "used"
+					case QuotaRequestPodCpu, QuotaRequestPodMemory:
+						label = "request"
+					}
+					limitVal := make(map[string]interface{})
+					val := make(map[string]interface{})
+					if rawLimitValue == nil {
+						var limitValue interface{}
+						switch MetricKey(key) {
+						case ContainerCpu, QuotaRequestPodCpu:
+							limitValue = resultSet0[string(QuotaLimitPodCpu)]
+							rawLimitValue = common.Get(limitValue, "RawUsage")
+						case ContainerMemory, QuotaRequestPodMemory:
+							limitValue = resultSet0[string(QuotaLimitPodMemory)]
+							rawLimitValue = common.Get(limitValue, "RawUsage")
+						}
+						limitUsage := common.Get(limitValue, "Usage")
+						limitUnit := common.Get(limitValue, "Unit")
+						limitVal["value"] = limitUsage
+						limitVal["unit"] = limitUnit
+						var limitPercentage int
+						if limitUsage != "0" {
+							limitPercentage = 100
+						}
+						limitVal["percentage"] = limitPercentage
+						values["limit"] = limitVal
+					}
+					rawUsage := common.Get(value, "RawUsage")
+					usage := common.Get(value, "Usage")
+					unit := common.Get(value, "Unit")
+					val["value"] = usage
+					val["unit"] = unit
+					var percentage interface{}
+					if rawLimitValue == "0" {
+						if usage != "0" {
+							percentage = 100
+						}
+					} else {
+						if rawUsage != "0" && rawUsage != nil && rawLimitValue != nil {
+							floatUsage, err := strconv.ParseFloat(rawUsage.(string), 64)
+							if err != nil {
+								fmt.Println("failed to read response body, err=%s\n", err)
+							}
+							limitFloat, err := strconv.ParseFloat(rawLimitValue.(string), 64)
+							if err != nil {
+								fmt.Println("failed to read response body, err=%s\n", err)
+							}
+							percentage = common.RoundFloat(floatUsage/limitFloat*100, 2)
+
+							switch MetricKey(key) {
+							case ContainerCpu, ContainerMemory:
+								usagePercentage = percentage
+							}
+							if percentage.(float64) > 100 {
+								percentage = 100
+							}
+						}
+					}
+					val["percentage"] = percentage
+					values[label] = val
+				}
+			}
+			values["percentage"] = usagePercentage
+
 			return MetricResponse{
 				Values: values,
 			}
