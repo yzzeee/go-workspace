@@ -87,7 +87,11 @@ func queryTemplateParserGenerator(paramKeys []interface{}) func(string, map[stri
 		for i, paramKey := range paramKeys {
 			param := bodyParams[paramKey.(string)]
 			if param == nil {
-				param = ".*"
+				if paramKey == "operator" {
+					param = "sum"
+				} else {
+					param = ".*"
+				}
 			}
 			if param == "" {
 				param = ""

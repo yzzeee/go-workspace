@@ -5,7 +5,7 @@ import "go-practice/common"
 // QueryTemplateParserGenerators 쿼리 템플릿과 쿼리 파라미터를 인자로 받아 쿼리를 반환하는 함수 목록 타입
 type QueryTemplateParserGenerators []func(queryTemplate string, bodyParams map[string]interface{}) (string, string)
 
-// MetricKey 메트릭 키
+// PrometheusVersion 프로메테우스 버전
 type PrometheusVersion string
 
 const (
@@ -203,10 +203,10 @@ var (
 				},
 			},
 			UnitTypeKeys: []common.UnitTypeKey{
-				common.PacketsPerSec,
-				common.PacketsPerSec,
+				common.Numeric,
+				common.Numeric,
 			},
-			PrimaryUnit: "pps",
+			PrimaryUnit: "",
 		},
 		ContainerNetworkPacketDrop: {
 			Label: "NETWORK PACKET DROP",
@@ -439,6 +439,57 @@ var (
 			},
 			PrimaryUnit: "B",
 		},
+		HaProxyTrafficIn: {
+			Label: "ROUTE TRAFFIC IN",
+			QueryInfos: map[PrometheusVersion]QueryInfo{
+				v2_20_0: {
+					QueryTemplates: []string{
+						"sum(irate(haproxy_server_bytes_in_total{exported_namespace=~\"%s\",route=~\"%s\"}[5m]))without(instance,exported_pod,exported_service,pod,server)",
+					},
+					QueryTemplateParserGenerators: QueryTemplateParserGenerators{
+						queryTemplateParserGenerator([]interface{}{"namespace", "route"}),
+					},
+				},
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.DecimalBytesPerSec,
+			},
+			PrimaryUnit: "Bps",
+		},
+		HaProxyTrafficOut: {
+			Label: "ROUTE TRAFFIC OUT",
+			QueryInfos: map[PrometheusVersion]QueryInfo{
+				v2_20_0: {
+					QueryTemplates: []string{
+						"sum(irate(haproxy_server_bytes_out_total{exported_namespace=~\"%s\",route=~\"%s\"}[5m]))without(instance,exported_pod,exported_service,pod,server)",
+					},
+					QueryTemplateParserGenerators: QueryTemplateParserGenerators{
+						queryTemplateParserGenerator([]interface{}{"namespace", "route"}),
+					},
+				},
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.DecimalBytesPerSec,
+			},
+			PrimaryUnit: "Bps",
+		},
+		HaProxyConnectionRate: {
+			Label: "ROUTE CONNECTION RATE",
+			QueryInfos: map[PrometheusVersion]QueryInfo{
+				v2_20_0: {
+					QueryTemplates: []string{
+						"sum(irate(haproxy_backend_connections_total{exported_namespace=~\"%s\",route=~\"%s\"}[5m]))without(instance,exported_pod,exported_service,pod,server)",
+					},
+					QueryTemplateParserGenerators: QueryTemplateParserGenerators{
+						queryTemplateParserGenerator([]interface{}{"namespace", "route"}),
+					},
+				},
+			},
+			UnitTypeKeys: []common.UnitTypeKey{
+				common.DecimalBytesPerSec,
+			},
+			PrimaryUnit: "Bps",
+		},
 		NumberOfContainer: {
 			Label: "CONTAINER",
 			QueryInfos: map[PrometheusVersion]QueryInfo{
@@ -500,10 +551,10 @@ var (
 				v2_20_0: {
 					QueryTemplates: []string{
 						// 노드, 네임스페이스 파드 수
-						"count(kube_pod_info{node=~\"%s\",namespace=~\"%s\"})",
+						"count(kube_pod_info{node=~\"%s\",namespace=~\"%s\",pod=~\"%s\"})",
 					},
 					QueryTemplateParserGenerators: QueryTemplateParserGenerators{
-						queryTemplateParserGenerator([]interface{}{"node", "namespace"}),
+						queryTemplateParserGenerator([]interface{}{"node", "namespace", "pod"}),
 					},
 				},
 			},
@@ -1102,10 +1153,10 @@ var (
 			QueryInfos: map[PrometheusVersion]QueryInfo{
 				v2_20_0: {
 					QueryTemplates: []string{
-						"sum(kube_resourcequota{type=\"hard\",resource=\"limits.cpu\",namespace=~\"%s\"})",
+						"%s(kube_resourcequota{type=\"hard\",resource=\"limits.cpu\",namespace=~\"%s\"})",
 					},
 					QueryTemplateParserGenerators: QueryTemplateParserGenerators{
-						queryTemplateParserGenerator([]interface{}{"namespace"}),
+						queryTemplateParserGenerator([]interface{}{"operator", "namespace"}),
 					},
 				},
 			},
@@ -1119,10 +1170,10 @@ var (
 			QueryInfos: map[PrometheusVersion]QueryInfo{
 				v2_20_0: {
 					QueryTemplates: []string{
-						"sum(kube_resourcequota{type=\"used\",resource=\"limits.cpu\",namespace=~\"%s\"})",
+						"%s(kube_resourcequota{type=\"used\",resource=\"limits.cpu\",namespace=~\"%s\"})",
 					},
 					QueryTemplateParserGenerators: QueryTemplateParserGenerators{
-						queryTemplateParserGenerator([]interface{}{"namespace"}),
+						queryTemplateParserGenerator([]interface{}{"operator", "namespace"}),
 					},
 				},
 			},
@@ -1136,10 +1187,10 @@ var (
 			QueryInfos: map[PrometheusVersion]QueryInfo{
 				v2_20_0: {
 					QueryTemplates: []string{
-						"sum(kube_resourcequota{type=\"hard\",resource=\"limits.memory\",namespace=~\"%s\"})",
+						"%s(kube_resourcequota{type=\"hard\",resource=\"limits.memory\",namespace=~\"%s\"})",
 					},
 					QueryTemplateParserGenerators: QueryTemplateParserGenerators{
-						queryTemplateParserGenerator([]interface{}{"namespace"}),
+						queryTemplateParserGenerator([]interface{}{"operator", "namespace"}),
 					},
 				},
 			},
@@ -1153,10 +1204,10 @@ var (
 			QueryInfos: map[PrometheusVersion]QueryInfo{
 				v2_20_0: {
 					QueryTemplates: []string{
-						"sum(kube_resourcequota{type=\"used\",resource=\"limits.memory\",namespace=~\"%s\"})",
+						"%s(kube_resourcequota{type=\"used\",resource=\"limits.memory\",namespace=~\"%s\"})",
 					},
 					QueryTemplateParserGenerators: QueryTemplateParserGenerators{
-						queryTemplateParserGenerator([]interface{}{"namespace"}),
+						queryTemplateParserGenerator([]interface{}{"operator", "namespace"}),
 					},
 				},
 			},
@@ -1221,10 +1272,10 @@ var (
 			QueryInfos: map[PrometheusVersion]QueryInfo{
 				v2_20_0: {
 					QueryTemplates: []string{
-						"sum(kube_resourcequota{type=\"hard\",resource=\"requests.cpu\",namespace=~\"%s\"})",
+						"%s(kube_resourcequota{type=\"hard\",resource=\"requests.cpu\",namespace=~\"%s\"})",
 					},
 					QueryTemplateParserGenerators: QueryTemplateParserGenerators{
-						queryTemplateParserGenerator([]interface{}{"namespace"}),
+						queryTemplateParserGenerator([]interface{}{"operator", "namespace"}),
 					},
 				},
 			},
@@ -1255,10 +1306,10 @@ var (
 			QueryInfos: map[PrometheusVersion]QueryInfo{
 				v2_20_0: {
 					QueryTemplates: []string{
-						"sum(kube_resourcequota{type=\"hard\",resource=\"requests.memory\",namespace=~\"%s\"})",
+						"%s(kube_resourcequota{type=\"hard\",resource=\"requests.memory\",namespace=~\"%s\"})",
 					},
 					QueryTemplateParserGenerators: QueryTemplateParserGenerators{
-						queryTemplateParserGenerator([]interface{}{"namespace"}),
+						queryTemplateParserGenerator([]interface{}{"operator", "namespace"}),
 					},
 				},
 			},
@@ -1272,7 +1323,7 @@ var (
 			QueryInfos: map[PrometheusVersion]QueryInfo{
 				v2_20_0: {
 					QueryTemplates: []string{
-						"sum(kube_resourcequota{type=\"hard\",resource=\"requests.memory\",namespace=~\"%s\"})",
+						"sum(kube_resourcequota{type=\"used\",resource=\"requests.memory\",namespace=~\"%s\"})",
 					},
 					QueryTemplateParserGenerators: QueryTemplateParserGenerators{
 						queryTemplateParserGenerator([]interface{}{"namespace"}),
@@ -1371,6 +1422,12 @@ var (
 		},
 		SummaryNodeInfo: {
 			MetricKeys: []MetricKey{CustomNodeCpu, CustomNodeFileSystem, CustomNodeMemory, NodeNetworkIn, NodeNetworkOut, NumberOfPod},
+		},
+		SummaryCpuQuotaInfo: {
+			MetricKeys: []MetricKey{ContainerCpu, QuotaRequestCpuHard, QuotaLimitCpuHard},
+		},
+		SummaryMemoryQuotaInfo: {
+			MetricKeys: []MetricKey{ContainerMemory, QuotaRequestMemoryHard, QuotaLimitMemoryHard},
 		},
 		SummaryContainerCpuInfo: {
 			MetricKeys: []MetricKey{ContainerCpu, QuotaRequestPodCpu, QuotaLimitPodCpu},

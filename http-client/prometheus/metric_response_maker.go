@@ -21,16 +21,18 @@ type MetricResponse struct {
 }
 
 // MakeMetricResponse QueryTemplates의 수와 동일한 resultSet이 인자로 들어오고 해당 resultSet을 이용하여 응답값을 만드는 함수
+//nolint:gocyclo
 func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 	maxValueUnit string, subLabels []string, isRange bool, resultSets ...interface{}) MetricResponse {
 	switch metricKey {
 	case
 		ContainerCpu, ContainerDiskIORead, ContainerDiskIOWrite, ContainerFileSystem, ContainerMemory,
 		ContainerNetworkIn, ContainerNetworkIO, ContainerNetworkOut, ContainerNetworkPacket, ContainerNetworkPacketDrop,
-		NodeCpu, NodeCpuLoadAverage, NodeDiskIO, NodeFileSystem, NodeMemory,
-		NodeNetworkIn, NodeNetworkIO, NodeNetworkOut, NodeNetworkPacket, NodeNetworkPacketDrop,
-		NumberOfContainer, NumberOfDeployment, NumberOfIngress, NumberOfNamespace, NumberOfPod,
-		NumberOfService, NumberOfStatefulSet, NumberOfVolume, QuotaCountConfigMapHard, QuotaCountConfigMapUsed,
+		HaProxyTrafficIn, HaProxyTrafficOut, HaProxyConnectionRate, NodeCpu, NodeCpuLoadAverage,
+		NodeDiskIO, NodeFileSystem, NodeMemory, NodeNetworkIn, NodeNetworkIO,
+		NodeNetworkOut, NodeNetworkPacket, NodeNetworkPacketDrop, NumberOfContainer, NumberOfDeployment,
+		NumberOfIngress, NumberOfNamespace, NumberOfPod, NumberOfService, NumberOfStatefulSet,
+		NumberOfVolume, QuotaCountConfigMapHard, QuotaCountConfigMapUsed,
 		QuotaCountPersistentVolumeClaimHard, QuotaCountPersistentVolumeClaimUsed, QuotaCountPodHard,
 		QuotaCountPodUsed, QuotaCountReplicationControllerHard, QuotaCountReplicationControllerUsed,
 		QuotaCountResourceQuotaHard, QuotaCountResourceQuotaUsed, QuotaCountSecretHard,
@@ -43,6 +45,10 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 		if !isRange {
 			var rawUsage = resultSets[0]
 			var resultSet0, _ = strconv.ParseFloat(fmt.Sprintf("%s", resultSets[0]), 64)
+
+			if rawUsage == nil {
+				rawUsage = ""
+			}
 
 			if unitTypeKeys != nil && unitTypeKeys[0] != "" {
 				resultSet0 = common.Humanize(resultSet0, unitTypeKeys[0],
@@ -166,7 +172,7 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 			}
 		}
 	case
-		SummaryContainerCpuInfo, SummaryContainerMemoryInfo:
+		SummaryContainerCpuInfo, SummaryContainerMemoryInfo, SummaryCpuQuotaInfo, SummaryMemoryQuotaInfo:
 		values := make(map[string]interface{})
 		if len(resultSets) != 0 && resultSets[0] != nil {
 			resultSet0 := resultSets[0].(map[string]interface{})
@@ -174,13 +180,16 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 			var rawLimitValue interface{}
 
 			for key, value := range resultSet0 {
+				fmt.Println(key)
 				switch MetricKey(key) {
-				case ContainerCpu, ContainerMemory, QuotaRequestPodCpu, QuotaRequestPodMemory:
+				case
+					ContainerCpu, ContainerMemory, QuotaRequestCpuHard,
+					QuotaRequestMemoryHard, QuotaRequestPodCpu, QuotaRequestPodMemory:
 					var label string
 					switch MetricKey(key) {
 					case ContainerCpu, ContainerMemory:
 						label = "used"
-					case QuotaRequestPodCpu, QuotaRequestPodMemory:
+					case QuotaRequestCpuHard, QuotaRequestMemoryHard, QuotaRequestPodCpu, QuotaRequestPodMemory:
 						label = "request"
 					}
 					limitVal := make(map[string]interface{})
@@ -188,11 +197,19 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 					if rawLimitValue == nil {
 						var limitValue interface{}
 						switch MetricKey(key) {
-						case ContainerCpu, QuotaRequestPodCpu:
-							limitValue = resultSet0[string(QuotaLimitPodCpu)]
+						case ContainerCpu, QuotaRequestCpuHard, QuotaRequestPodCpu:
+							if metricKey == SummaryCpuQuotaInfo {
+								limitValue = resultSet0[string(QuotaLimitCpuHard)]
+							} else {
+								limitValue = resultSet0[string(QuotaLimitPodCpu)]
+							}
 							rawLimitValue = common.Get(limitValue, "RawUsage")
-						case ContainerMemory, QuotaRequestPodMemory:
-							limitValue = resultSet0[string(QuotaLimitPodMemory)]
+						case ContainerMemory, QuotaRequestMemoryHard, QuotaRequestPodMemory:
+							if metricKey == SummaryCpuQuotaInfo {
+								limitValue = resultSet0[string(QuotaLimitCpuHard)]
+							} else {
+								limitValue = resultSet0[string(QuotaLimitPodMemory)]
+							}
 							rawLimitValue = common.Get(limitValue, "RawUsage")
 						}
 						limitUsage := common.Get(limitValue, "Usage")
@@ -211,13 +228,14 @@ func MakeMetricResponse(metricKey MetricKey, unitTypeKeys []common.UnitTypeKey,
 					unit := common.Get(value, "Unit")
 					val["value"] = usage
 					val["unit"] = unit
+
 					var percentage interface{}
-					if rawLimitValue == "0" {
+					if rawLimitValue == "0" || rawLimitValue == nil || rawLimitValue == "" {
 						if usage != "0" {
 							percentage = 100
 						}
 					} else {
-						if rawUsage != "0" && rawUsage != nil && rawLimitValue != nil {
+						if rawUsage != "0" && rawUsage != "" && rawUsage != nil {
 							floatUsage, err := strconv.ParseFloat(rawUsage.(string), 64)
 							if err != nil {
 								fmt.Println("failed to read response body, err=%s\n", err)

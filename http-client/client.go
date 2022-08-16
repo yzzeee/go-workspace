@@ -47,6 +47,9 @@ func main() {
 		//"metricKeys": []string{"custom_quota_limit_memory"},
 		//"metricKeys": []string{"custom_quota_request_cpu"},
 		//"metricKeys": []string{"custom_quota_request_memory"},
+		//"metricKeys": []string{"ha_proxy_traffic_in"},
+		//"metricKeys": []string{"ha_proxy_traffic_out"},
+		//"metricKeys": []string{"ha_proxy_connection_rate"},
 		//"metricKeys": []string{"node_cpu"},
 		//"metricKeys": []string{"node_cpu_load_average"},
 		//"metricKeys": []string{"node_disk_io"},
@@ -101,8 +104,10 @@ func main() {
 		//"metricKeys": []string{"quota_request_storage_hard"},
 		//"metricKeys": []string{"quota_request_storage_used"},
 		//"metricKeys": []string{"summary_node_info"},
-		"metricKeys": []string{"summary_container_cpu_info"},
+		//"metricKeys": []string{"summary_container_cpu_info"},
 		//"metricKeys": []string{"summary_container_memory_info"},
+		//"metricKeys": []string{"summary_cpu_quota_info"},
+		//"metricKeys": []string{"summary_memory_quota_info"},
 		//"metricKeys": []string{"top_node_cpu_by_node"},
 		//"metricKeys": []string{"top_node_file_system_by_node"},
 		//"metricKeys": []string{"top_node_memory_by_node"},
@@ -147,11 +152,16 @@ func main() {
 			innerMetricKeys := metricDefinition.MetricKeys
 			if innerMetricKeys != nil { // 다른 메트릭의 값을 활용하는 메트릭 처리
 				innerResult := make(map[string]interface{})
+				innerQueries := make(map[string]interface{})
 				for _, innerMetricKey := range innerMetricKeys {
 					innerResult = common.MergeJSONMaps(innerResult, getQueryResult(innerMetricKey, bodyParams))
+					innerQueries = common.MergeJSONMaps(innerQueries, map[string]interface{}{
+						string(innerMetricKey): innerResult[string(innerMetricKey)].(prometheus.MetricResponse).Queries,
+					})
 				}
 				metricResponse := prometheus.MakeMetricResponse(prometheus.MetricKey(metricKey), nil, "", nil, false, innerResult)
 				result = common.MergeJSONMaps(result, map[string]interface{}{metricKey: metricResponse.Values})
+				//result["Queries"] = innerQueries
 			} else {
 				queryResult := getQueryResult(prometheus.MetricKey(metricKey), bodyParams)
 				result = common.MergeJSONMaps(result, queryResult)
