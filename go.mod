@@ -8,4 +8,7 @@ require (
 	k8s.io/client-go v0.22.12
 )
 
-require k8s.io/apimachinery v0.22.12
+require (
+	github.com/golang-jwt/jwt/v4 v4.4.2
+	k8s.io/apimachinery v0.22.12
+)
