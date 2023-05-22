@@ -16,7 +16,7 @@ type Claims struct {
 var jwtKey = []byte("hello-jwt")
 
 func main() {
-	token1 := CreateToken("secloudit-admin")
+	token1 := CreateToken("hello-user")
 	fmt.Println("token > ", token1)
 
 	claims1 := getClaimFromToken(token1)
