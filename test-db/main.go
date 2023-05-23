@@ -46,9 +46,10 @@ var (
 						     ON DUPLICATE KEY
 						     UPDATE
 							   x=:x, y=:y, w=:w, h=:h, widget_code=:widget_code, side_information=:side_information`
-	insertEventQuery      = `INSERT INTO events(name, properties, browser) values (?, ?, ?)`
-	selectEventByIdQuery  = `SELECT * FROM events WHERE id = ?`
-	deleteWidgetListQuery = `DELETE FROM dashboard_widget WHERE i NOT IN (?) and x = ?`
+	insertEventQuery         = `INSERT INTO events(name, properties, browser) values (?, ?, ?)`
+	selectEventByIdQuery     = `SELECT * FROM events WHERE id = ?`
+	deleteWidgetListQuery    = `DELETE FROM dashboard_widget WHERE i NOT IN (?) and x = ?`
+	deleteAllWidgetListQuery = `DELETE FROM dashboard_widget`
 )
 
 func main() {
