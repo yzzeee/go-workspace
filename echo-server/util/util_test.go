@@ -64,8 +64,8 @@ func TestTrimStringPrefix(t *testing.T) {
 func TestFindProxy(t *testing.T) {
 	// 요청 URL
 	//http://172.18.255.200/kiali/api/namespaces/istio-system/istio/envoyfilters/tcp-stats-filter-1.17?validate=true&help=true
-	requestURL := "/api/console/servicemesh/namespaces/istio-system/istio/envoyfilters/tcp-stats-filter-1.17?validate=true&help=true"
-	requestMethod := "POST"
+	requestURL := "/api/console/servicemesh/namespaces/istio-system/istio/envoyfilters/tcp-stats-filter-1.17"
+	requestMethod := "GET"
 
 	// Prefix 제거
 	requestURL = "/api" + strings.TrimPrefix(requestURL, prefix)
@@ -76,10 +76,12 @@ func TestFindProxy(t *testing.T) {
 	find := funk.Find(*proxy.Proxies, func(proxy proxy.Proxy) bool {
 		pattern := urlpath.New(proxy.Pattern)
 		_, patternOK := pattern.Match(requestURL)
+		t.Log("패턴 일치 여부 확인: ", patternOK)
 		methodOK := proxy.Method == requestMethod
 		return patternOK && methodOK
 	})
 
+	t.Log(find)
 	client := req.C().
 		SetUserAgent("my-custom-client").
 		SetTimeout(5 * time.Second)

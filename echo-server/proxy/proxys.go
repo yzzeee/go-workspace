@@ -6,13 +6,13 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type handlerFunc func(c *echo.Context) error
+type HandlerFunc func(c echo.Context) error
 
 type Proxy struct {
 	Name        string
 	Method      string
 	Pattern     string
-	HandlerFunc handlerFunc
+	HandlerFunc HandlerFunc
 	Type        interface{}
 }
 
@@ -20,17 +20,17 @@ type proxies []Proxy
 
 var Proxies = &proxies{
 	{
+		"IstioConfigDetails",
+		"GET",
+		"/api/namespaces/:namespace/istio/:objectType/:object",
+		handler.IstioConfigDetails,
+		models.IstioConfigDetails{},
+	},
+	{
 		"allIstioConfigs",
 		"GET",
 		"/api/istio/config",
 		handler.Healthz,
 		"faf",
-	},
-	{
-		"IstioConfigDetails",
-		"POST",
-		"/api/namespaces/:namespace/istio/:objectType/:object",
-		handler.IstioConfigDetails,
-		models.IstioConfigDetails{},
 	},
 }

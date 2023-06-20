@@ -9,7 +9,7 @@ func main() {
 	e := echo.New()
 	e.GET("/", manager.HelloWorld)
 	// Kiali API Route Root
-	kiali := e.Group("/api/servicemesh/kiali")
+	kiali := e.Group("/api/console/servicemesh")
 	// 모든 요청을 하나의 Endpoint 에서 관리
 	kiali.Any("*", manager.ProxyKialiServer)
 
