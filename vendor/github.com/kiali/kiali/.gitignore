@@ -1,0 +1,116 @@
+############################################
+#                BACKEND                   #
+############################################
+
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
+.glide/
+
+# The compiled binary
+/kiali
+
+# Files specific to our build process
+_output
+
+# Swap files
+.*.sw*
+
+# Eclipse
+.project
+.settings/
+
+# IntelliJ
+.idea/
+
+# VSCode
+.vscode/
+
+# Swagger
+swagger.json
+
+# The vendor directory is to be committed to the git repo
+#vendor/
+
+# Configuration files for the hack scripts
+hack/*.local.sh
+
+# E2E testing files
+tests/integration/junit-rest-report.xml
+tests/integration/int-test.log
+
+# Do not commit operator code to this repo
+operator
+
+# Do not commit helm-charts code to this repo
+helm-charts
+
+
+############################################
+#                FRONTEND                  #
+############################################
+
+# See https://help.github.com/ignore-files/ for more about ignoring files.
+
+# dependencies
+frontend/node_modules
+
+# IDE
+frontend/.idea
+frontend/.vscode
+
+# testing
+frontend/coverage
+
+# production
+frontend/build
+
+# misc
+frontend/.DS_Store
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+frontend/package-lock.json
+
+frontend/logs
+
+# compiled patternfly assets
+frontend/src/**/*.css
+frontend/src/**/*.css.map
+!frontend/src/index.css
+!frontend/src/css/.gitkeep
+frontend/src/img/*
+!frontend/src/img/.gitkeep
+frontend/src/fonts/*
+!frontend/src/fonts/.gitkeep
+frontend/src/sass/*
+!frontend/src/sass/index.sass
+
+# Commit Slider css
+!frontend/src/components/IstioWizards/Slider/styles/default.css
+
+# Cypress
+frontend/cypress/videos
+frontend/cypress/screenshots
+
+# Do not commit core-ui code to this repo
+core-ui
+
+# Do not commit plugin code to this repo
+ossmc
